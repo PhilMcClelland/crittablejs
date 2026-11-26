@@ -1,6 +1,10 @@
 # Changelog
 
-Crittable.js is installed by copying a folder, so a page runs the version that was copied. `data-version` on the tool's element says which.
+A page runs the version its script tag names (the `@v…` in a hosted address), or the version of the folder that was copied. `data-version` on the tool's element says which.
+
+## 0.1.1
+
+- On a touch device the search field's words no longer start under its magnifying glass, and the name field at the foot of the panel is 16px like the other fields, so a phone does not zoom the page when it is touched. Both came with the touch sizes in 0.1.0.
 
 ## 0.1.0 (first public version)
 

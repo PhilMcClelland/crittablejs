@@ -1,4 +1,4 @@
-/*! Crittable.js 0.1.0 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
+/*! Crittable.js 0.1.1 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
 // Crittable.js: attach notes to spots on a page.
 (() => {
   'use strict';
@@ -10,7 +10,7 @@
   const keyIs = (evt, name) => String(evt.key).toLowerCase() === String(KEYS[name]).toLowerCase();
   const isBack = evt => keyIs(evt, 'back');
   const keyCap = name => /^esc(ape)?$/i.test(KEYS[name]) ? 'Esc' : String(KEYS[name]).toUpperCase();
-  const VERSION = '0.1.0';   // also in the first line of this file and in CHANGELOG.md
+  const VERSION = '0.1.1';   // also in the first line of this file and in CHANGELOG.md
   const GUARD = '__' + OPTS.tagName;
   /* the product name, with a file extension (".js") split off so the lockup can set it quietly */
   const NAME = /^(.+?)(\.[a-z]{1,4})?$/i.exec(String(OPTS.productName)) || [0, String(OPTS.productName), ''];
@@ -821,7 +821,8 @@ aside.fail .listing{display:none}
 @media (pointer:coarse){:host{--pin-d:40px}.dock button{width:52px;height:52px}.icb,.send,.tb,.acts .link{min-width:40px;min-height:40px}.quiet,.btn{min-height:40px}
   /* what is typed with a thumb is set at 16px: below that, a phone zooms the whole page in when the field is touched, and
      does not zoom back. The field is as tall as the button beside it. */
-  textarea,input[type=search],.namefield{font-size:var(--cm-fs-type);min-height:40px;padding:var(--cm-s2) var(--cm-s3)}.compose textarea{min-height:40px}
+  textarea,input[type=search],.namefield,.you .namefield{font-size:var(--cm-fs-type);min-height:40px;padding-top:var(--cm-s2);padding-bottom:var(--cm-s2)}.compose textarea{min-height:40px}
+  textarea,.namefield,.you .namefield{padding-left:var(--cm-s3);padding-right:var(--cm-s3)}   /* not the search field: its sides make room for its icon and its clear button */
   .compose .face{margin-bottom:9px}.thread .compose .face,.peek .compose .face{margin-bottom:7px}   /* still level with the last line of the taller field */
   .tick{width:40px;height:40px;opacity:.6}.side-tools{top:-2px}.pick .who{min-height:36px}.pick .face{margin-top:7px}.pick .who .meta{min-width:84px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}`;

@@ -309,6 +309,15 @@ const seeded = fail => `(() => { const rows = [
       assert(m, 'the note field is there');
       assert(m[0] >= 16, 'text under 16px makes a phone zoom the page when the field is touched: it is ' + m[0] + 'px');
       assert(m[1] >= 40, 'the field is as tall as the send button: it is ' + m[1] + 'px');
+      /* the same for the other two fields a thumb types in, and the search field keeps its icon clear of its words */
+      for (let i = 0; i < 3; i++) await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+      await page.locator('.dock button').first().tap(); await page.waitForTimeout(600);
+      const find = (await q('aside input[type=search]', '[parseFloat(getComputedStyle(el).fontSize), parseFloat(getComputedStyle(el).paddingLeft), el.parentNode.querySelector(".ic").getBoundingClientRect().right - el.getBoundingClientRect().left]'))[0];
+      assert(find && find[0] >= 16, 'the search field is 16px too');
+      assert(find[1] >= find[2], 'the search field\'s words start after its icon: padding ' + find[1] + 'px, icon ends at ' + Math.round(find[2]) + 'px');
+      await page.locator('.you .edit').tap(); await page.waitForTimeout(400);
+      const nm = (await q('.you .namefield', '[parseFloat(getComputedStyle(el).fontSize), Math.round(el.getBoundingClientRect().height)]'))[0];
+      assert(nm && nm[0] >= 16 && nm[1] >= 40, 'the name field is 16px and 40px tall: ' + JSON.stringify(nm));
     });
     await scene('on a phone the add key leaves the panel shut', { viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true }, null, async ({ page, q, key }) => {
       await key('c', 500);

@@ -17,7 +17,7 @@
  },
  "lastChange": {
   "by": "maintainer",
-  "at": "2026-11-20T00:00:00Z",
-  "note": "Copy link to share: first in the More menu when the store has a link, and a line under the empty panel."
+  "at": "2026-11-26T00:00:00Z",
+  "note": "Previews rebuilt from the released tool: the empty panel's mark is the critter; Move pin in the note's menu; Keyboard shortcuts in the panel's menu; fields at 16px on touch."
  }
 }

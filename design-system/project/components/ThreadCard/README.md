@@ -11,3 +11,4 @@ The open note: its title, the note, the replies, and a reply field. It is the pi
 - Replies are flat: every message and the reply row share one face column and one text column.
 - A note with no pin to open from (its target is missing or hidden) opens centred over a dimmed page, with no sharp corner and one line saying why: add `.adrift` and a `.adrift-why`. It is modal: dim everything else, the panel included, make it inert, and keep Tab inside.
 - Delete asks for confirmation inside the card. Never open a dialog over the page while the note has a pin to open from.
+- "Move pin" in the note's More menu is the way to move a pin without dragging: the card closes, the cursor becomes the pin, and the next spot chosen is the note's place. For a reader who may only read, it is off and says so.

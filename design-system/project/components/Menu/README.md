@@ -10,3 +10,4 @@ A short list of choices that drops from an icon button: sort order, what to show
 - One menu open at a time, the card's included. Outside click and Escape close it and return focus to the trigger.
 - A destructive item is the last one and uses `cm-err`.
 - An item that is off for a reason says the reason in the menu, in a `.cap.why` line under it. A tooltip on a disabled button reaches neither keyboard nor touch.
+- "Keyboard shortcuts" in the panel's More menu is a checkbox like any other setting: it turns the single-letter keys off for a reader whose page, or whose own tools, need them.

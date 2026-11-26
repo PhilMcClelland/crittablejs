@@ -25,9 +25,9 @@ const CARDS = [
   ['Pin', 'Page', [['PIN.Draft', 'Draft'], ['PIN.Rest', 'Rest'], ['PIN.RestUnread', 'Unread'], ['PIN.Open', 'Open'], ['PIN.Pointed', 'Pointed from its row'], ['PIN.Lifted', 'Dragging'], ['PIN.Muted', 'Resolved'], ['PIN.Quoted', 'Quoted words'], ['PLACING.TargetHint', 'Target band']]],
   ['PreviewCard', 'Page', [['PIN.Preview', 'Hover preview']]],
   ['Toast', 'Page', [['CARD.UndoOffered', 'Undo offered']]],
-  ['ThreadCard', 'Cards', [['CARD.Reading', 'Reading'], ['CARD.ReadingResolved', 'Resolved'], ['CARD.MenuOpen', 'More menu'], ['CARD.ConfirmDelete', 'Confirm delete'], ['CARD.Adrift', 'No pin to open from']]],
+  ['ThreadCard', 'Cards', [['CARD.Reading', 'Reading'], ['CARD.ReadingResolved', 'Resolved'], ['CARD.MenuOpen', 'More menu'], ['PLACING.Moving', 'Move pin, in the More menu'], ['CARD.ConfirmDelete', 'Confirm delete'], ['CARD.Adrift', 'No pin to open from']]],
   ['Composer', 'Cards', [['COMPOSER.NewOpen', 'New note'], ['COMPOSER.Focused', 'Focused'], ['COMPOSER.Ready', 'Ready to send'], ['COMPOSER.TooLong', 'Too long'], ['COMPOSER.SaveFailed', 'Save failed']]],
-  ['Menu', 'Cards', [['MENU.Open', 'Open'], ['MENU.ItemHover', 'Item hover'], ['MENU.ItemChecked', 'Checked'], ['MENU.ItemDisabled', 'Disabled'], ['MENU.ShareLink', 'Copy link to share'], ['MENU.ShareCopied', 'Link copied']]],
+  ['Menu', 'Cards', [['MENU.Open', 'Open'], ['MENU.ItemHover', 'Item hover'], ['MENU.ItemChecked', 'Checked'], ['MENU.ItemDisabled', 'Disabled'], ['MENU.ShareLink', 'Copy link to share'], ['MENU.ShareCopied', 'Link copied'], ['MENU.Shortcuts', 'Keyboard shortcuts']]],
   ['Sidebar', 'Panel', [['SIDEBAR.Open', 'Open'], ['SIDEBAR.Searching', 'Searching']]],
   ['Row', 'Panel', [['ROW.Rest', 'Rest'], ['ROW.Hover', 'Hover'], ['ROW.Selected', 'Selected'], ['ROW.Unread', 'Unread'], ['ROW.Resolved', 'Resolved'], ['ROW.Lost', 'Target missing']]],
   ['Notice', 'Panel', [['EMPTY.NoThreads', 'No notes yet'], ['EMPTY.NoThreadsShare', 'No notes yet, with a link to share'], ['EMPTY.NoMatch', 'No match'], ['EMPTY.StorageFailed', 'Storage failed']]]

@@ -32,6 +32,26 @@ Persistable.js is a small JSON store with a choice of where the data is kept. Th
 
 6. **Check it in two browsers.** Open the prototype in a normal window and a private window (with `data-key="link"`, open the first window's full address in the second). A note added in one should appear in the other within a second, marked unread.
 
+## By token, for a site that signs people in
+
+For a prototype on a site that already knows who its visitors are, when groups of them should each have their own notes, or should write under the names the site has for them. It needs code on that site's server. On a static host use `data-key="link"`, with a copy of the page for each group.
+
+1. **The store.** Steps 1, 2 and 5 above (not step 3: its tag has no token, and would share the notes in the open), with `worker.js` at Persistable.js 0.2.0 or later. Then give it a `TOKEN_SECRET`: the persistablejs repo's `SETUP.md`, step 7, makes one and sets it without the value being typed.
+2. **The site's server.** Add one address that answers with a token for a visitor the site has let in. `docs/access.md` in the persistablejs repo, "A token from your own site", has the code (a few lines, with `token.mjs` copied from that repo) and the rules: one `space` per group, from an id that never changes; one `person` per visitor, never the group's; check the visitor first; let no cache keep the answer. Answer 401 or 403 for a visitor who is not let in.
+3. **The tag.** No `data-key`, `data-read` or `data-space`: the token says all three.
+
+   ```html
+   <script src="crittable/crittable.js" data-backend="persistable"
+           data-url="https://persistable.<their-subdomain>.workers.dev" data-token-url="/api/token"></script>
+   ```
+
+   The tool has to be 0.2.0 or later, all of it. If the prototype already had it from a copied folder, replace the whole `crittable/` folder; if the tag names a hosted version, make it `@v0.2.0` or later. When only part of it is older, the tool notices, keeps notes in the browser and says why in the console. When all of it is older, nothing notices: the attribute is ignored and the notes are shared with no token, in the open. So check before anyone uses it: the tool's element on the page (`pin-note-board` unless renamed) carries `data-version`, and the three-visitor check below fails if a visitor in another group can see the notes.
+
+   The address must be on the page's own site, since it is asked with the site's cookies. The tool starts once it answers. If it has not answered in eight seconds, or answers with anything but a token, the console says so and notes stay in the browser.
+4. **Check it as three visitors.** Two in one group see each other's notes, and each can edit only their own. One in another group sees none of them. A visitor the site turns away still gets the tool, with notes kept in their own browser; the tool says nothing about it in the console (the browser itself notes the 401).
+
+What to tell the person: the notes are as separate as the site's own check of its visitors; a token is good for ten minutes, so someone signed out stops reaching the notes within that; everyone in a group reads all of that group's notes; and the name on a note is written by its author's browser, so the site's name for someone is what the tool shows by default, not something the store enforces.
+
 ## On Supabase instead
 
 Pick this when the person already has a Supabase project, or wants the notes in Postgres. It does less than the Worker: no link keys or read keys, so anyone who has the page can read the notes and add to them, and changes arrive within about four seconds, not at once.

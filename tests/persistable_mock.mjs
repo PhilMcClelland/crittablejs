@@ -11,7 +11,7 @@ function storage() {
     list: async ({ prefix = '' } = {}) => new Map([...m].filter(([k]) => k.startsWith(prefix)).sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, v]) => [k, copy(v)]))
   };
 }
-const env = {
+export const env = {
   SPACES: {
     idFromName: name => name,
     get: name => { if (!spaces.has(name)) spaces.set(name, new Space({ storage: storage() })); return spaces.get(name); }

@@ -1,4 +1,4 @@
-/*! Crittable.js 0.1.2 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
+/*! Crittable.js 0.2.0 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
 // Crittable.js: attach notes to spots on a page.
 (() => {
   'use strict';
@@ -10,7 +10,7 @@
   const keyIs = (evt, name) => String(evt.key).toLowerCase() === String(KEYS[name]).toLowerCase();
   const isBack = evt => keyIs(evt, 'back');
   const keyCap = name => /^esc(ape)?$/i.test(KEYS[name]) ? 'Esc' : String(KEYS[name]).toUpperCase();
-  const VERSION = '0.1.2';   // also in the first line of this file and in CHANGELOG.md
+  const VERSION = '0.2.0';   // also in the first line of this file and in CHANGELOG.md
   const GUARD = '__' + OPTS.tagName;
   /* the product name, with a file extension (".js") split off so the lockup can set it quietly */
   const NAME = /^(.+?)(\.[a-z]{1,4})?$/i.exec(String(OPTS.productName)) || [0, String(OPTS.productName), ''];

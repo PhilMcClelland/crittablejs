@@ -319,3 +319,13 @@ None yet.
 - **Why**: a note can be a thousand characters, and someone writing three lines could see one. The stylesheet already had the 120px limit a growing field needs; nothing made it grow.
 - **Carried out in**: `fit` and `grows` in `crittable/pinwall.js`, on the new-note field, the reply field and the field of a note or reply being edited. The new-note box is anchored by the edge on its pin, so it grows away from the pin; an open note's shell is fitted again each time a field in it changes height.
 - **Left to the maintainer**: how it feels as the card grows under the cursor.
+
+## Who decides which notes a visitor shares, on a site that signs people in?
+- **Asked**: 2026-11-26
+- **Options**: (a) the page, with `data-space` and a fixed key served only to people the site lets in; (b) the site's own notes endpoint and database, behind a custom backend; (c) the site's server signs a short-lived token saying the space and the person, and the store takes its word
+- **Recommendation**: (c), built in Persistable.js, with one attribute here
+- **Decided**: 2026-11-26 → (c)
+- **Why**: with (a) the key outlives the password, everyone in a group can change each other's notes, and a cached page leaks one group's key to another. (b) makes every site write a notes store. (c) is how hosted services generally let a host vouch for a user, keeps authorship enforced by the store, and ends access by itself when the site stops handing out tokens.
+- **Carried out in**: Persistable.js 0.2.0 (`token` option, `TOKEN_SECRET`, `token.mjs`); here `data-token-url` in `crittable/crittable.js` and `crittable/backends/persistable.js`. The tool itself (`crittable/pinwall.js`) did not change.
+- **Two choices inside it**: a visitor the site names is not offered a name field, by setting the name the way a page sets `CRITTABLE_USER`, which is an existing state; a visitor the site turns away (401 or 403) gets the tool with notes kept in their browser and nothing in the console, because being turned away is the site's answer and not a fault.
+- **Left to the maintainer**: whether a visitor the site names should be able to change that name.

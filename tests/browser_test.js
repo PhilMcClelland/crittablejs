@@ -45,6 +45,17 @@ const server = http.createServer((req, res) => {
       res.writeHead(r.status, { 'content-type': 'application/json' }); res.end(await r.text());
     }); return;
   }
+  /* a site's token address: it knows its visitors by a cookie, puts each in the review group's space, and turns the rest away */
+  if (/^\/__token/.test(req.url)) {
+    (async () => {
+      const who = (/(?:^|;\s*)who=([a-z]+)/.exec(req.headers.cookie || '') || [])[1];
+      if (!who) { res.writeHead(401, { 'content-type': 'text/plain' }); res.end('sign in first'); return; }
+      const mock = await import('./persistable_mock.mjs'), { tokenResponse } = await import('./vendor/persistable_token.mjs');
+      storeMock = storeMock || mock.default; mock.env.TOKEN_SECRET = mock.env.TOKEN_SECRET || 'made-up-for-the-test-' + 'x'.repeat(24);
+      const r = await tokenResponse(mock.env.TOKEN_SECRET, Object.assign({ space: 'review/harbour', person: who }, who === 'ada' ? { name: 'Ada of Harbour' } : who === 'rita' ? { read: true } : {}));
+      res.writeHead(200, Object.fromEntries(r.headers)); res.end(await r.text());
+    })(); return;
+  }
   if (req.url === '/__store') {
     if (req.method === 'GET') { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(shared)); return; }
     let body = ''; req.on('data', c => { body += c; }); req.on('end', () => { try { storeOp(body); res.writeHead(204); } catch (_) { res.writeHead(404); } res.end(); }); return;
@@ -540,6 +551,44 @@ const seeded = fail => `(() => { const rows = [
         assert.deepStrictEqual(A.errs.concat(B.errs), [], 'page errors'); done.push(label + ' adapter: script tag to shared notes, against a stand-in');
       } catch (e) { e.message = label + ' adapter: ' + e.message; throw e; }
       finally { await A.ctx.close(); await B.ctx.close(); if (C) await C.ctx.close(); }
+    }
+    /* by token: the page's own site says who each visitor is, which notes they share, and who only reads */
+    {
+      const said = [];
+      const open = async (who) => { const ctx = await browser.newContext({ viewport: { width: 1200, height: 760 } }); if (who) await ctx.addCookies([{ name: 'who', value: who, url: origin }]);
+        const page = await ctx.newPage(); const errs = []; page.on('pageerror', e => errs.push(String(e))); page.on('console', m => { if (m.type() === 'warning' || m.type() === 'error') said.push((who || 'nobody') + ': ' + m.text()); });
+        await page.route('**/sample/index.html', async route => { const r = await route.fetch(); await route.fulfill({ response: r, body: (await r.text()).replace('<script src="../crittable/crittable.js">', '<script src="../crittable/crittable.js" data-backend="persistable" data-url="' + origin + '" data-token-url="/__token" data-poll="300">') }); });
+        await page.goto(url); await page.waitForTimeout(1100);
+        const q = (sel, f) => page.evaluate(([sel, f]) => { const o = []; for (const h of [...document.body.children].filter(e => e.shadowRoot)) for (const el of h.shadowRoot.querySelectorAll(sel)) o.push(new Function('el', 'return ' + f)(el)); return o; }, [sel, f || '1']);
+        return { ctx, page, q, errs }; };
+      const A = await open('ada'), B = await open('ben'), R = await open('rita'), N = await open(null);
+      try {
+        await A.page.keyboard.press('c'); const b = await A.page.locator('text=Order a bunch').first().boundingBox();
+        await A.page.mouse.click(b.x + 20, b.y + 8); await A.page.waitForTimeout(450);
+        await A.page.locator('.composer textarea').fill('through a token'); await A.page.locator('.composer textarea').press('Enter'); await A.page.waitForTimeout(900);
+        await A.page.locator('.dock button').first().click(); await A.page.waitForTimeout(400);
+        assert.deepStrictEqual(await A.q('footer.you:not(.reading)', 'el.hidden'), [true], 'a visitor the site names is offered no name to change, as when the page names them');
+        await A.page.keyboard.press('Escape'); await A.page.waitForTimeout(300);
+        await B.page.waitForTimeout(900);
+        const pinB = (await B.q('.pin', '(r => [r.left + r.width / 2, r.top + r.height / 2, getComputedStyle(el).visibility, el.getAttribute("aria-label")])(el.getBoundingClientRect())')).find(p => p[2] === 'visible');
+        assert(pinB && /Ada of Harbour/.test(pinB[3]), 'the note reaches someone else in the group, under the name the site gave: ' + JSON.stringify(pinB));
+        await B.page.mouse.click(pinB[0], pinB[1]); await B.page.waitForTimeout(700);
+        await B.page.locator('.thread button[aria-label="More options"]').click(); await B.page.waitForTimeout(200);
+        assert.strictEqual((await B.q('.thread .menu button', 'el.textContent + ":" + el.disabled')).filter(x => /^(Edit|Delete):true/.test(x)).length, 2, 'the person in the token decides whose note it is');
+        await B.page.keyboard.press('Escape');
+        assert.deepStrictEqual(await B.q('footer.you:not(.reading)', 'el.hidden'), [false], 'a visitor the site did not name can still give a name');
+        assert.strictEqual((await R.q('.pin')).length, 1, 'a visitor whose token only reads sees the note');
+        await R.page.locator('.dock button').first().click(); await R.page.waitForTimeout(400);
+        assert.deepStrictEqual([(await R.q('aside .add')).length, (await R.q('footer.you.reading', 'el.hidden'))[0]], [0, false], 'and is offered nothing that writes');
+        assert.deepStrictEqual([(await N.q('.pin')).length, (await N.q('.dock button')).length > 0], [0, true], 'a visitor the site turns away still has the tool, and none of the group\'s notes');
+        await N.page.keyboard.press('c'); const n = await N.page.locator('text=Order a bunch').first().boundingBox();
+        await N.page.mouse.click(n.x + 20, n.y + 8); await N.page.waitForTimeout(450);
+        await N.page.locator('.composer textarea').fill('kept here'); await N.page.locator('.composer textarea').press('Enter'); await N.page.waitForTimeout(900);
+        assert.deepStrictEqual([(await N.q('.pin')).length, (await A.q('.pin')).length], [1, 1], 'what they write stays in their own browser');
+        assert.deepStrictEqual(said.filter(s => !/Failed to load resource|WebSocket connection/.test(s))   /* the browser's own lines: the turned-away visitor's 401, and this server has no live line */, [], 'nothing is said in the console, to the visitor let in or the one turned away');
+        assert.deepStrictEqual(A.errs.concat(B.errs, R.errs, N.errs), [], 'page errors'); done.push('by token: the site names the visitor, groups share notes, a reader only reads, and a visitor turned away keeps notes locally with no error');
+      } catch (e) { e.message = 'by token: ' + e.message; throw e; }
+      finally { for (const x of [A, B, R, N]) await x.ctx.close(); }
     }
     console.log('browser tests passed: ' + done.join('; '));
   } catch (e) { console.error('browser test FAILED after [' + done.join('; ') + ']\n' + e.message); process.exitCode = 1; }

@@ -2,6 +2,11 @@
 
 A page runs the version its script tag names (the `@v…` in a hosted address), or the version of the folder that was copied. `data-version` on the tool's element says which.
 
+## 0.2.0
+
+- `data-token-url`: on a site that already knows who its visitors are, the site's server can say which notes a visitor shares, what to call them, and whether they may write. Add `data-token-url="/api/token"` (an address on the page's own site) beside `data-backend="persistable"` and `data-url`. Each group the site keeps apart has its own notes, a visitor the site names is not asked for a name, and a visitor the site turns away keeps their notes in their own browser. It needs a Persistable.js 0.2.0 Worker with `TOKEN_SECRET` set; `backends/persistable/SETUP.md`, "By token".
+- The Persistable.js client in `crittable/vendor/` is 0.2.0. Nothing changes for a page that does not use a token.
+
 ## 0.1.2
 
 - A field grows with what is written in it (the new note, a reply, a note or reply being edited), up to about five lines, and scrolls past that. Before, it stayed one line tall and long words scrolled out of sight.

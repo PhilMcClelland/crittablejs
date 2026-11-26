@@ -35,13 +35,14 @@
      Persistable.js, with data-url, and optionally data-key="link" to keep the notes among people who have the page's
      link. Persistable.js keeps its objects in a Cloudflare Worker unless data-store names another of its stores:
      data-store="supabase" takes data-url and data-api-key (the project's publishable key). data-space is optional.
+     data-token-url names an address on the page's own site that vouches for the visitor (Worker only; no key or space with it).
      The adapter is a file in this same folder tree, like everything else the loader fetches. */
   var be = me.getAttribute('data-backend'), shared = steps.length;   // what is added to steps from here on is the store's
   /* a name that cannot be a file here is said out loud: ignored without a word, notes would stay in this browser and a check
      made in one browser would look like it worked */
   if (be && !/^[a-z0-9-]+$/.test(be) && window.console) console.warn('crittable: data-backend="' + be + '" is not a store name (lower-case letters, digits and "-", such as "persistable"). Notes will stay in this browser.');
   if (be && /^[a-z0-9-]+$/.test(be)) {
-    window.CRITTABLE_BACKEND = { name: be, url: me.getAttribute('data-url'), key: me.getAttribute('data-key'), space: me.getAttribute('data-space'), poll: me.getAttribute('data-poll'), read: me.getAttribute('data-read') || undefined, store: me.getAttribute('data-store') || undefined, apiKey: me.getAttribute('data-api-key') || undefined };
+    window.CRITTABLE_BACKEND = { name: be, url: me.getAttribute('data-url'), key: me.getAttribute('data-key'), space: me.getAttribute('data-space'), poll: me.getAttribute('data-poll'), read: me.getAttribute('data-read') || undefined, store: me.getAttribute('data-store') || undefined, apiKey: me.getAttribute('data-api-key') || undefined, tokenUrl: me.hasAttribute('data-token-url') ? me.getAttribute('data-token-url') : undefined };
     var kind = window.CRITTABLE_BACKEND.store;
     /* a store of Persistable.js's that is not the Worker is a file of its own, loaded after the client */
     if (be === 'persistable' && kind && kind !== 'worker' && !/^[a-z0-9-]+$/.test(kind)) { if (window.console) console.warn('crittable: data-store="' + kind + '" is not a store name. Notes will stay in this browser.'); be = null; }
@@ -52,7 +53,17 @@
      go on with notes kept in this browser. */
   var chain = function (list) { return list.reduce(function (p, u) { return p.then(function () { return load(u); }); }, Promise.resolve()); };
   chain(steps.slice(0, shared)).then(function () {
-    return chain(steps.slice(shared)).catch(function (e) { window.CRITTABLE_BACKEND = undefined; if (window.console) console.warn(e.message + '. Notes will stay in this browser.'); });
+    /* a store that has to ask the page's site who the visitor is says when it knows; the tool starts after that */
+    /* (only when a store is being set up at all: a store name already refused above has been said once) */
+    var byToken = !!be && !!window.CRITTABLE_BACKEND && window.CRITTABLE_BACKEND.tokenUrl !== undefined;
+    window.CRITTABLE_BACKEND_READY = undefined;   // the adapter's to set: one already on the page is not its word
+    return chain(steps.slice(shared)).then(function () {
+      /* a page that asks for a token must not end up sharing notes without one: an adapter that does not know the
+         attribute (an older copy, kept by a cache) would have set up the open space named after the page */
+      var ready = window.CRITTABLE_BACKEND_READY;
+      if (byToken && !(ready && typeof ready.then === 'function')) throw new Error('crittable: this copy of the store adapter does not know data-token-url');
+      return ready && typeof ready.then === 'function' ? ready : undefined;
+    }).catch(function (e) { if (byToken && window.CRITTABLE_CONFIG) { try { delete window.CRITTABLE_CONFIG.backend; } catch (_) { /* not ours to change */ } } window.CRITTABLE_BACKEND = undefined; if (window.console) console.warn(e.message + '. Notes will stay in this browser.'); });
   }).then(function () { return chain([base + 'store.js', base + 'pinwall.js']); })
     .catch(function (e) { if (window.console) console.warn(e.message); });
 })();

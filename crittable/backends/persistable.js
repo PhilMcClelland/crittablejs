@@ -15,7 +15,13 @@
             Without one, anyone who finds the store can read and add. See docs/access.md in the persistablejs repository.
      read   a read key, for a public page: everyone who opens it sees the notes, and only people whose link carries the
             key (use key: "link" with it) can add or change them. `node readkey.mjs --new` in the persistablejs repo makes a pair.
-     poll   how often to ask while the live connection is down, in ms (default 4000) */
+     poll   how often to ask while the live connection is down, in ms (default 4000)
+     tokenUrl  an address on the page's own site that answers with a Persistable.js token for the visitor it has let
+            in (docs/access.md in the persistablejs repository). The token says which space they are in, who they
+            are, and whether they may write, so it goes with no key, read or space. The Worker only. It is asked with
+            the site's own cookies. A visitor the site turns away (401 or 403) keeps their notes in their own
+            browser, and nothing is said about it. Or `token`, a function that returns one, for a page that sets
+            the backend up itself: then use CrittablePersistable(opt).ready(), which resolves to the backend. */
 (function (root) {
   'use strict';
   /* notes and replies are objects in one collection; a reply's parent is its note */
@@ -23,7 +29,13 @@
   var isPlace = function (a) { return !!a && typeof a === 'object' && !Array.isArray(a) && typeof a.k === 'string' && typeof a.v === 'string' && !!a.k && !!a.v; };
   function backend(opt) {
     if (typeof root.Persistable !== 'function') throw new Error('crittable persistable: the Persistable.js client is not loaded');
+    /* the attribute with nothing in it (a template whose value came out empty) still says a token was meant */
+    if (opt.tokenUrl != null && !opt.token) { if (!String(opt.tokenUrl).trim()) throw new Error('crittable persistable: data-token-url is empty'); opt = Object.assign({}, opt, { token: tokenFrom(String(opt.tokenUrl).trim()) }); }
+    /* the loader hands over every attribute, set or not: with a token, the ones it replaces must be absent, not empty */
+    if (opt.token) { opt = Object.assign({}, opt); ['key', 'read', 'space'].forEach(function (k) { if (opt[k] == null || opt[k] === '') delete opt[k]; }); }
     var db = root.Persistable(opt), notes = db.collection('crittable');
+    /* an older client would not know the option, and would quietly use the open space named after the page */
+    if (opt.token && typeof db.ready !== 'function') throw new Error('crittable persistable: this copy of the Persistable.js client is too old for tokens');
     function person(o) { var p = { authorId: o.owner, authorName: o.data.authorName }; if (o.data.authorAvatar) p.authorAvatar = o.data.authorAvatar; return p; }
     function threads(rows) {
       /* Rows are whatever other people stored, so nothing about them is taken on trust. byId has no prototype: an id such as
@@ -66,13 +78,16 @@
       return parts;
     }
     var who = function (x) { var d = { v: x.v || 1, text: x.text, authorName: x.authorName }; if (x.authorAvatar) d.authorAvatar = x.authorAvatar; return d; };
-    return {
+    var out = {
       shared: true,
       /* the page carries a read key and this visitor's link carries no key: they may look, and nothing else */
       readOnly: !!db.readOnly,
       poll: Number(opt.poll) || 4000,
       space: db.space,
-      whoami: function () { return db.me(); },
+      /* who the store says this is. The id is the store's. A name comes only with a token, and is passed on only when it
+         is the name the page already has for the visitor (set below from the token, or by the page itself): otherwise
+         it would replace, at every load, a name the visitor chose or the page gave */
+      whoami: function () { return db.me().then(function (me) { if (me && 'name' in me && !(root.CRITTABLE_USER && root.CRITTABLE_USER.name === me.name)) { me = Object.assign({}, me); delete me.name; } return me; }); },
       /* is the store answering? Passed straight on from the client, when the client is new enough to say */
       status: function (fn) { return typeof db.onStatus === 'function' ? db.onStatus(fn) : function () {}; },
       /* with a key, the address to send people so they reach these notes; null without one */
@@ -91,12 +106,70 @@
       updateReply: function (id, rid, patch) { return notes.patch(rid, split(patch)); },
       removeReply: function (id, rid) { return notes.remove(rid); }
     };
+    /* With a token, what the visitor may do and what the site calls them are known only once the first token is in.
+       ready() waits for that and resolves to this backend; it rejects if the site hands over no token. All of it is
+       in the token, so the store is not asked: one that is slow or down just now does not hold the tool up.
+       `named` is the site's name for the visitor, or null: a page that sets the backend up itself puts it in
+       CRITTABLE_USER.name before the tool loads. */
+    out.ready = function () {
+      if (typeof db.ready !== 'function') return Promise.resolve(out);
+      return db.ready().then(function () {
+        out.readOnly = !!db.readOnly; out.space = db.space;
+        out.named = (typeof db.name === 'string' && db.name.trim()) || null;
+        return out;
+      });
+    };
+    return out;
+  }
+  /* a token from the page's own site: asked with its cookies, and never from a cache */
+  function tokenFrom(address) {
+    /* the page's own site and no other: the visitor's cookies are what the answer depends on, and another site would be
+       handed nothing to go on and trusted with which notes this visitor sees */
+    var loc = root.location, mine = function (u) { try { var a = new root.URL(u, (root.document && root.document.baseURI) || loc.href); return /^https?:$/.test(a.protocol) && a.origin === loc.origin; } catch (_) { return false; } };
+    if (!loc || typeof root.URL !== 'function' || !mine(address)) throw new Error('crittable persistable: data-token-url is an address on the page\'s own site');
+    return function () {
+      return root.fetch(address, { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'text/plain' } }).then(function (r) {
+        /* and it has to have stayed there: an answer that came from somewhere else, by a redirect, is not the site's */
+        if (r.url && !mine(r.url)) throw new Error('crittable persistable: the token address sent the browser to another site');
+        if (!r.ok) { var e = new Error('crittable persistable: the token address answered ' + r.status); e.status = r.status; throw e; }
+        return r.text();
+      });
+    };
   }
   root.CrittablePersistable = backend;
   /* in a page: build the backend from the loader's options and hand it to the tool */
   var opt = root.CRITTABLE_BACKEND;
   if (opt && opt.name === 'persistable') {
-    try { root.CRITTABLE_CONFIG = Object.assign(root.CRITTABLE_CONFIG || {}, { backend: backend(opt) }); }
-    catch (e) { if (root.console) root.console.warn(e.message + '. Notes will stay in this browser.'); }
+    var use = function (b) { root.CRITTABLE_CONFIG = Object.assign(root.CRITTABLE_CONFIG || {}, { backend: b }); };
+    var local = function (e) { if (root.console) root.console.warn(((e && e.message) || 'crittable persistable: the store could not be set up') + '. Notes will stay in this browser.'); };
+    /* The tag itself is asked as well as the loader: a loader from before tokens (an older copy, kept by a cache) passes
+       no token address on, and would have these notes shared in the open space named after the page. */
+    var tag = null;
+    try { tag = root.document && root.document.querySelector ? root.document.querySelector('script[data-token-url]') : null; } catch (_) { tag = null; }
+    try {
+      if (opt.tokenUrl == null && tag) throw new Error('crittable persistable: the page asks for data-token-url and crittable.js is an older copy that does not know it (load the page again without the cache)');
+      var made = backend(opt);
+      if (opt.tokenUrl == null) use(made);
+      else {
+        /* The loader waits for this before it starts the tool, so the tool starts knowing who the visitor is and what
+           they may do. It always resolves: a site that does not answer in time must not keep the tool off the page. */
+        var timer = null, late = new Promise(function (_, fail) { timer = setTimeout(function () { fail(new Error('crittable persistable: the token address did not answer in time')); }, 8000); });
+        var first = made.ready(), tidy = function () { clearTimeout(timer); };
+        first.then(tidy, tidy);
+        root.CRITTABLE_BACKEND_READY = Promise.race([first, late]).then(function (b) {
+          /* the site's name for the visitor, unless the page has given one itself. Set the way a page sets it, so the
+             tool does not offer a name field for a name that is not the visitor's to choose. */
+          use(b);
+          var given = root.CRITTABLE_USER && typeof root.CRITTABLE_USER.name === 'string' && root.CRITTABLE_USER.name.trim();
+          if (b.named && !given) root.CRITTABLE_USER = Object.assign({}, root.CRITTABLE_USER, { name: b.named });
+        }, function (e) {
+          /* the site let this visitor in to the page and not to the notes: that is its answer, not a fault */
+          if (!(e && (e.status === 401 || e.status === 403))) local(e);
+        });
+      }
+    } catch (e) {
+      local(e);
+      if (opt.tokenUrl != null) root.CRITTABLE_BACKEND_READY = Promise.resolve();   // said already: the loader has nothing to add
+    }
   }
 })(typeof window !== 'undefined' ? window : globalThis);

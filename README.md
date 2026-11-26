@@ -9,7 +9,7 @@ Make any coded prototype crittable. Add one script tag and people can pin a note
 Add one tag to your page:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/PhilMcClelland/crittablejs@v0.1.2/crittable/crittable.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/PhilMcClelland/crittablejs@v0.2.0/crittable/crittable.js"></script>
 ```
 
 A round button appears in the corner. Press `C`, click anything on the page, and write a note.
@@ -31,7 +31,7 @@ Working with an agent? Tell it "Add github.com/PhilMcClelland/crittablejs to thi
 By default notes stay in the browser that wrote them. To share them between everyone who opens the prototype, add a store. Crittable.js runs no service of its own: it shares notes through [Persistable.js](https://persistablejs.philmcclelland.com), which keeps them in a backend you own and set up once.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/PhilMcClelland/crittablejs@v0.1.2/crittable/crittable.js"
+<script src="https://cdn.jsdelivr.net/gh/PhilMcClelland/crittablejs@v0.2.0/crittable/crittable.js"
         data-backend="persistable" data-key="link"
         data-url="https://persistable.YOUR-SUBDOMAIN.workers.dev"></script>
 ```
@@ -42,6 +42,8 @@ Two stores are ready, and an agent can follow the [setup](backends/persistable/S
 - **A Supabase project**: for when you already have one, or want the notes in Postgres. The tag is then `data-backend="persistable" data-store="supabase" data-url="https://<ref>.supabase.co" data-api-key="<publishable key>"`, with no `data-key`.
 
 With the Worker and `data-key="link"` the notes stay among the people you send the prototype's link to; without it, anyone who finds the store's address can read and add notes. Add `data-read="<read key>"` for a page everyone can read but only invited people can write on. The setup guide says how to make the pair.
+
+On a site that already signs people in, its server can decide which notes each visitor shares and what to call them, so several clients or teams can review one prototype without seeing each other's notes: add `data-token-url`. It is the one option that needs code on the site's server; the setup guide has it under "By token".
 
 To keep notes anywhere else, write a Persistable.js store ([how](https://github.com/PhilMcClelland/persistablejs/blob/main/docs/stores.md)), or an adapter for the tool itself: that contract is in [spec/STORAGE.md](spec/STORAGE.md).
 

@@ -23,7 +23,7 @@ A site that sends a `Content-Security-Policy` header has to allow four things, o
 | Directive | What to allow | Why |
 | --- | --- | --- |
 | `script-src` | Where `crittable.js` is served from: `'self'` for a copied folder, `https://cdn.jsdelivr.net` for the hosted tag. | The loader adds a script tag for each of its files, from its own folder. A policy built on nonces needs `'strict-dynamic'` for those to load. The tool uses no `eval`. |
-| `style-src` | `'unsafe-inline'` | The tool's stylesheet is a `<style>` element made by script, in its shadow root and one in `<head>`. It carries no nonce, so nothing narrower lets it through. Without it the tool is on the page with no styles at all. |
+| `style-src` | `'unsafe-inline'`, or the hashes of the tool's stylesheets | The tool's styles are `<style>` elements made by script: one in its shadow root (the same text again in the element for a note being written) and one in `<head>`. They carry no nonce. Without either, the tool is on the page with no styles at all. |
 | `img-src` | `data:` | The cursor shown while a note is being placed is an inline image. Without it the cursor stays the page's own, and placing still works. Avatars need their own addresses allowed: the ones the page gives in `CRITTABLE_USER.avatar`, and `https://gravatar.com` with `gravatar: true`. |
 | `connect-src` | The store, with `data-backend`: its address twice, as `https://…` and as `wss://…`. | Notes are read and written over `https`; changes are pushed over a WebSocket, and browsers do not agree that allowing `https://` covers `wss://`. Without the second the tool still works, by asking every few seconds. With `data-token-url`, the token address is on the page's own site, which `'self'` covers. |
 
@@ -33,5 +33,7 @@ For a Worker store that comes to:
 script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;
 connect-src 'self' https://persistable.YOUR-SUBDOMAIN.workers.dev wss://persistable.YOUR-SUBDOMAIN.workers.dev
 ```
+
+A policy that does not want `'unsafe-inline'` can list the SHA-256 hash of each stylesheet's exact text in `style-src` (`'sha256-…'`): there are two, the tool's and the placing cursor's. Take the text from the page as it runs, shadow root included, not from the source: it is built when the tool starts. It changes between versions, so the hashes are worked out again whenever the tool is updated, and a build that does this by itself is the way to keep it right.
 
 A Supabase store has no WebSocket to allow: `connect-src` needs only `https://<ref>.supabase.co`.

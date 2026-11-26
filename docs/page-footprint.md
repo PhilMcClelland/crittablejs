@@ -15,3 +15,23 @@ It draws itself in a shadow root, so its styles and the page's do not meet. This
 - **Globals.** Read: `CRITTABLE_CONFIG` and `CRITTABLE_USER`. Set: `CRITTABLE_CONFIG` by `config.js` when the page has not set it; `CrittableStore`; two flags, `__crittableLoader` and `window['__pin-note-board']` (`'__'` and the `tagName`), so a second copy does nothing. With `data-backend` the loader also sets `CRITTABLE_BACKEND` (the tag's attributes), the adapter sets `CrittablePersistable`, the Persistable.js client sets `Persistable`, and the adapter writes `backend` into `CRITTABLE_CONFIG`, making that object if the page has none. With `data-token-url` the adapter also sets `CRITTABLE_BACKEND_READY` (a promise the loader waits for), asks that address on the page's own site for a token, with the site's cookies, when the page loads and again shortly before each token runs out, and sets `CRITTABLE_USER.name` when the token names the visitor and the page has not.
 - **Browser storage.** In `localStorage` (or `sessionStorage` with `storage: 'session'`): `<prefix>.*`, where the prefix is `storagePrefix`, for the notes when there is no shared store, which notes have been read, the reader's settings and, with a shared store, their made-up id and name. In `sessionStorage`: `<prefix>.hint`, which carries the note to open across a move to another page. With `data-store="supabase"`, in `localStorage`: `persistable.supabase.<url>`, the person's session tokens. With Persistable.js, in `localStorage`: `persistable.<url>`, the secret that makes this browser a person, and with `data-key="link"`, `persistable.key.<url>|<space>`, the link's key. Any script on the same origin can read all of these and act as that person, so do not share a store from a page that runs scripts you do not trust.
 - **Links between pages.** A note on another page of the same site is a link to that page. On a shared store, anyone who can write notes chooses that address, so a site whose plain links change things (a `/logout` that works by GET) should not share a store with strangers.
+
+## On a site with a Content Security Policy
+
+A site that sends a `Content-Security-Policy` header has to allow four things, or the tool is blocked in part. Without a policy there is nothing to do.
+
+| Directive | What to allow | Why |
+| --- | --- | --- |
+| `script-src` | Where `crittable.js` is served from: `'self'` for a copied folder, `https://cdn.jsdelivr.net` for the hosted tag. | The loader adds a script tag for each of its files, from its own folder. A policy built on nonces needs `'strict-dynamic'` for those to load. The tool uses no `eval`. |
+| `style-src` | `'unsafe-inline'` | The tool's stylesheet is a `<style>` element made by script, in its shadow root and one in `<head>`. It carries no nonce, so nothing narrower lets it through. Without it the tool is on the page with no styles at all. |
+| `img-src` | `data:` | The cursor shown while a note is being placed is an inline image. Without it the cursor stays the page's own, and placing still works. Avatars need their own addresses allowed: the ones the page gives in `CRITTABLE_USER.avatar`, and `https://gravatar.com` with `gravatar: true`. |
+| `connect-src` | The store, with `data-backend`: its address twice, as `https://…` and as `wss://…`. | Notes are read and written over `https`; changes are pushed over a WebSocket, and browsers do not agree that allowing `https://` covers `wss://`. Without the second the tool still works, by asking every few seconds. With `data-token-url`, the token address is on the page's own site, which `'self'` covers. |
+
+For a Worker store that comes to:
+
+```
+script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;
+connect-src 'self' https://persistable.YOUR-SUBDOMAIN.workers.dev wss://persistable.YOUR-SUBDOMAIN.workers.dev
+```
+
+A Supabase store has no WebSocket to allow: `connect-src` needs only `https://<ref>.supabase.co`.

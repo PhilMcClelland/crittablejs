@@ -68,6 +68,8 @@ Pick this when the person already has a Supabase project, or wants the notes in 
    Do not add `data-key` or `data-read`: this store refuses them, and the notes would stay in the browser.
 4. Check it in two browsers, as in step 6 above. Then tell the person what `stores/SUPABASE.md` lists under "What to tell the person", and that the notes are objects in the `crittable` collection of the `persistable_objects` table.
 
+If the prototype's site sends a Content Security Policy, the store's address has to be allowed in it, twice: `docs/page-footprint.md`, "On a site with a Content Security Policy".
+
 ## What to tell the person
 
 These are for the Worker; for Supabase see the section above.

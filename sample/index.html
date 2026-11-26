@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="../site/favicon.svg">
+<title>Harbour market stall board</title>
+<style>
+  /* Stand-in host page. Its palette is its own (not the tool's tokens) so the demo shows the tool on a foreign page. */
+  :root { --page-bg: #e8efe9; --page-ink: #1f2d27; --page-rule: #3d5a4a; --page-card: #fbfdf9; --page-edge: #a9bfb0; --page-btn: #3d5a4a; --page-btn-ink: #ffffff; --page-link: #1d4f86; }
+  @media (prefers-color-scheme: dark) {
+    :root { --page-bg: #121a16; --page-ink: #dde8e1; --page-rule: #7fb597; --page-card: #1b2620; --page-edge: #3a5044; --page-btn: #7fb597; --page-btn-ink: #0f1b15; --page-link: #8cc7ee; color-scheme: dark; }
+  }
+  html { background: var(--page-bg); }
+  body { color: var(--page-ink); font-family: Georgia, serif; margin: 0 auto; max-width: 64rem; padding: 2rem 1.25rem 6rem; }
+  a { color: var(--page-link); }
+  .masthead { border-bottom: 0.2rem double var(--page-rule); margin-bottom: 1.5rem; }
+  .masthead h1 { font-size: 2rem; letter-spacing: 0.04em; margin: 0; }
+  .stalls { display: flex; flex-wrap: wrap; column-gap: 1.1rem; row-gap: 0.8rem; margin: 0; padding-left: 0; list-style-type: none; }
+  .stalls > li { background: var(--page-card); border: 1px solid var(--page-edge); flex: 1 1 15rem; padding: 0.9rem 1rem; }
+  .stalls h2 { font-size: 1.15rem; margin: 0 0 0.4rem; }
+  .buy { background: var(--page-btn); border: 0; color: var(--page-btn-ink); font: inherit; padding: 0.4rem 0.9rem; }
+  .closed-stall { display: none; }
+</style>
+</head>
+<body>
+<header class="masthead" id="market-head">
+  <h1>Harbour market stall board</h1>
+  <p>Switch on the pin tool, then click any spot below to attach a remark. <a href="states.html">State sheet</a> shows every tool state in light and dark.</p>
+</header>
+<ul class="stalls" id="stall-list">
+  <li id="stall-fish"><h2>Fish counter</h2><p>Morning catch, laid out on ice. Select a few words, then place a pin to remember them.</p><button class="buy" type="button">Reserve a crate</button></li>
+  <li id="stall-bread"><h2>Bakery</h2><p>Loaves sell out early. Visit the <a href="#/rota">opening rota</a> without leaving this page while pinning.</p></li>
+  <li id="stall-flowers">
+    <h2>Flower cart</h2>
+    <button class="buy" type="button">Order a bunch</button>
+    <p>Resize the window: remarks keep their place on the cart.</p>
+  </li>
+  <li class="closed-stall" id="stall-closed"><h2>Closed stall</h2></li>
+</ul>
+<script src="../crittable/crittable.js"></script>
+</body>
+</html>

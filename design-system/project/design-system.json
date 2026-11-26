@@ -1,0 +1,23 @@
+{
+ "v": 3,
+ "layout": "files",
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-17T00:50:33Z"
+ },
+ "title": "Ink and Highlighter",
+ "namespace": "InkHighlighter",
+ "libraries": [],
+ "sections": {},
+ "groups": [],
+ "assetGroups": {},
+ "blobs": {},
+ "docs": {
+  "sections": []
+ },
+ "lastChange": {
+  "by": "maintainer",
+  "at": "2026-11-20T00:00:00Z",
+  "note": "Copy link to share: first in the More menu when the store has a link, and a line under the empty panel."
+ }
+}

@@ -1,0 +1,39 @@
+<!-- @dsCard group="Cards" height=1029 width=880 -->
+<!doctype html>
+<meta charset="utf-8">
+<style>
+html,body{margin:0;background:var(--cm-base);color:var(--cm-text)}
+.ds{display:flex;flex-wrap:wrap;gap:16px;padding:16px;align-items:flex-start}
+.ds figure{margin:0;display:flex;flex-direction:column;gap:var(--cm-s2)}
+.ds figcaption{font-size:var(--cm-fs-meta);color:var(--cm-text-meta)}
+.stage{padding:var(--cm-s4);border:1px dashed var(--cm-border);border-radius:var(--cm-r-md);display:flex;align-items:flex-start;justify-content:center;min-height:64px;position:relative}
+.stage{padding:var(--cm-s4);border:1px dashed var(--cm-border);border-radius:var(--cm-r-md);display:flex;align-items:flex-start;justify-content:center;min-height:64px;position:relative}
+.stage.page{background:var(--cm-strip)}
+.stage .pin,.stage .card,.stage aside,.stage .dock,.stage .note-banner{position:relative;left:auto;top:auto;right:auto;bottom:auto;transform:none}
+.stage .pin{margin:0}
+.stage .toast{position:relative;left:auto;bottom:auto;translate:none}
+.stage .quoted{background:var(--cm-selected);color:var(--cm-text)}
+.stage .menu{position:relative;top:auto;right:auto}
+.stage .thread .menu{position:absolute;top:40px;right:8px}
+.stage .dock{transform:none!important}
+.stage aside{height:300px;width:300px;transition:none}
+.stage aside.half{transform:translateX(35%);opacity:.9}
+.stage:has(aside.half){overflow:hidden}
+.stage .pin{flex:none}
+.stage .scroll{padding:0;flex:none;overflow:visible;width:290px}
+.stage .frozen{animation-play-state:paused!important;animation-delay:-.12s!important}
+.stage .leaving.frozen{animation-delay:-.05s!important}
+.stage .thread.short{max-height:250px}
+.stage .thread.adrift{margin:0;height:auto;box-shadow:var(--cm-elev-3)}
+.stage .ghostnote{color:var(--cm-text-hint);font-size:var(--cm-fs-meta);align-self:center}
+.stage .target{outline:2px solid var(--cm-pin-ink);outline-offset:3px;box-shadow:0 0 0 3px var(--cm-accent);padding:var(--cm-s2) var(--cm-s3);border-radius:2px;color:var(--cm-text-body)}
+.stage .plain{padding:var(--cm-s2) var(--cm-s3);color:var(--cm-text-body)}
+</style>
+<div class="ds">
+<figure><div class="stage"><div><button type="button" aria-label="Sort and filter" title="Sort and filter" aria-haspopup="menu" aria-expanded="true" class="icb" aria-controls="pw-menu-0"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg></span></button><div class="menu" role="menu" aria-label="Sort and filter"><div class="cap">Sort</div><label role="menuitemradio" aria-checked="true"><input type="radio" name="order-spec1" value="new" checked=""><span>Newest first</span></label><label role="menuitemradio" aria-checked="false"><input type="radio" name="order-spec1" value="unread"><span>Unread first</span></label><hr><label role="menuitemcheckbox" aria-checked="false"><input type="checkbox" data-resolved="1"><span>Show resolved</span></label><hr><button type="button" role="menuitem" disabled="" aria-disabled="true">Mark all as read</button></div></div></div><figcaption>Open</figcaption></figure>
+<figure><div class="stage"><div class="menu" role="menu" aria-label="Sort and filter"><div class="cap">Sort</div><label role="menuitemradio" aria-checked="true"><input type="radio" name="order-spec3" value="new" checked=""><span>Newest first</span></label><label role="menuitemradio" aria-checked="false" class="is-hover"><input type="radio" name="order-spec3" value="unread"><span>Unread first</span></label><hr><label role="menuitemcheckbox" aria-checked="false"><input type="checkbox" data-resolved="1"><span>Show resolved</span></label><hr><button type="button" role="menuitem" disabled="" aria-disabled="true">Mark all as read</button></div></div><figcaption>Item hover</figcaption></figure>
+<figure><div class="stage"><div class="menu" role="menu" aria-label="Sort and filter"><div class="cap">Sort</div><label role="menuitemradio" aria-checked="true"><input type="radio" name="order-spec5" value="new" checked=""><span>Newest first</span></label><label role="menuitemradio" aria-checked="false"><input type="radio" name="order-spec5" value="unread"><span>Unread first</span></label><hr><label role="menuitemcheckbox" aria-checked="true"><input type="checkbox" data-resolved="1"><span>Show resolved</span></label><hr><button type="button" role="menuitem" disabled="" aria-disabled="true">Mark all as read</button></div></div><figcaption>Checked</figcaption></figure>
+<figure><div class="stage"><div class="menu" role="menu" aria-label="Sort and filter"><div class="cap">Sort</div><label role="menuitemradio" aria-checked="true"><input type="radio" name="order-spec6" value="new" checked=""><span>Newest first</span></label><label role="menuitemradio" aria-checked="false"><input type="radio" name="order-spec6" value="unread"><span>Unread first</span></label><hr><label role="menuitemcheckbox" aria-checked="false"><input type="checkbox" data-resolved="1"><span>Show resolved</span></label><hr><button type="button" role="menuitem" disabled="" aria-disabled="true">Mark all as read</button></div></div><figcaption>Disabled</figcaption></figure>
+<figure><div class="stage"><div class="menu" role="menu" aria-label="More options"><button type="button" role="menuitem" data-share="1">Copy link to share</button><hr><label role="menuitemcheckbox" aria-checked="true"><input type="checkbox" checked="" data-pins="1"><span>Show pins</span><kbd>Shift+C</kbd></label><label role="menuitemcheckbox" aria-checked="true"><input type="checkbox" checked="" data-launcher="1"><span>Show launcher</span></label><button type="button" role="menuitem">Move list to other side</button><hr><div class="cap">Theme</div><label role="menuitemradio" aria-checked="false"><input type="radio" name="theme-spec7" value="auto"><span>Match system</span></label><label role="menuitemradio" aria-checked="true"><input type="radio" name="theme-spec7" value="light" checked=""><span>Light</span></label><label role="menuitemradio" aria-checked="false"><input type="radio" name="theme-spec7" value="dark"><span>Dark</span></label></div></div><figcaption>Copy link to share</figcaption></figure>
+<figure><div class="stage"><div class="menu" role="menu" aria-label="More options"><button type="button" role="menuitem" data-share="1">Link copied</button><hr><label role="menuitemcheckbox" aria-checked="true"><input type="checkbox" checked="" data-pins="1"><span>Show pins</span><kbd>Shift+C</kbd></label><label role="menuitemcheckbox" aria-checked="true"><input type="checkbox" checked="" data-launcher="1"><span>Show launcher</span></label><button type="button" role="menuitem">Move list to other side</button><hr><div class="cap">Theme</div><label role="menuitemradio" aria-checked="false"><input type="radio" name="theme-spec8" value="auto"><span>Match system</span></label><label role="menuitemradio" aria-checked="true"><input type="radio" name="theme-spec8" value="light" checked=""><span>Light</span></label><label role="menuitemradio" aria-checked="false"><input type="radio" name="theme-spec8" value="dark"><span>Dark</span></label></div></div><figcaption>Link copied</figcaption></figure>
+</div>

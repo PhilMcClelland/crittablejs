@@ -1,0 +1,12 @@
+{
+  // The public page at crittablejs.philmcclelland.com: static files only, no Worker code, so nothing here runs or is metered.
+  // Deploy with `npx wrangler@4 deploy` from this folder. The build step fills dist/ from the last commit (not from the
+  // working folder), so only tracked files can be published. A fork should change the name and the route, or delete this file.
+  "name": "crittablejs-site",
+  "compatibility_date": "2025-10-01",
+  "build": { "command": "sh scripts/build_site.sh" },
+  "assets": { "directory": "./dist" },
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "crittablejs.philmcclelland.com", "custom_domain": true }]
+}

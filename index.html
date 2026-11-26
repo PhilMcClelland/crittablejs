@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<link rel="icon" type="image/svg+xml" href="site/favicon.svg">
+<title>Crittable.js</title>
+<meta name="description" content="Make any coded prototype crittable: people pin a note to any spot on the page.">
+<link rel="stylesheet" href="site/tokens.css">
+<style>
+/* Always paper: the page is fixed to light (data-theme on the root), and the tool on it starts in light to match, because
+   ink and highlighter only read literally on paper. A reader can still switch the tool in its own menu.
+   The landing page is a host page like any other: it uses the Ink and Highlighter tokens (site/tokens.css, generated)
+   and the tool runs on top of it. Colour here is ink on paper; yellow is only ever a fill behind ink. */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+/* the page is not the panel: the panel is `base`, so the page takes the raised surface (white in light, a lifted grey in dark) */
+body{margin:0;background:var(--cm-raised);color:var(--cm-text);font:17px/1.55 var(--cm-font);-webkit-font-smoothing:antialiased}
+/* ground: a plain array of the mark, each with its own look on its face, ink at a few percent (scripts/landing_ground.js draws it).
+   A mask, so the ink is the token and follows the theme. */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--cm-text);opacity:.045;
+  -webkit-mask:var(--crowd) 0 0/var(--crowd-size) var(--crowd-size);mask:var(--crowd) 0 0/var(--crowd-size) var(--crowd-size)}
+/* ground:start */:root{--crowd:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 528 528'%3E%3Cstyle%3E*{fill:none;stroke:black;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.b{stroke-width:3.4}.fine{stroke-width:1.9}%3C/style%3E%3Cg transform='translate(33 33)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-4.9 -1.7v3.4M2.1 -1.7v3.4'/%3E%3C/g%3E%3Cg transform='translate(165 33)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -2.6v5.2M4.7 -2.6v5.2'/%3E%3C/g%3E%3Cg transform='translate(297 33)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -2.6v5.2M4.7 -2.6v5.2'/%3E%3C/g%3E%3Cg transform='translate(429 33)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-3.8 0.4h3M3.2 0.4h3'/%3E%3C/g%3E%3Cg transform='translate(99 99)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -1.3v2.6M4.7 -1.3v2.6'/%3E%3C/g%3E%3Cg transform='translate(231 99)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-4.9 -1.7v3.4M2.1 -1.7v3.4'/%3E%3C/g%3E%3Cg transform='translate(363 99)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -4.1v3.4M4.7 -4.1v3.4'/%3E%3C/g%3E%3Cg transform='translate(495 99)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-4.9 -1.7v3.4M2.1 -1.7v3.4'/%3E%3C/g%3E%3Cg transform='translate(33 165)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -2.6v5.2M4.7 -2.6v5.2'/%3E%3C/g%3E%3Cg transform='translate(165 165)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-0.3 -1.7v3.4M6.7 -1.7v3.4'/%3E%3C/g%3E%3Cg transform='translate(297 165)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b fine' d='M-4.6 1.5q2.3 -5 4.6 0M2.4 1.5q2.3 -5 4.6 0'/%3E%3C/g%3E%3Cg transform='translate(429 165)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -2.6v5.2M4.7 -2.6v5.2'/%3E%3C/g%3E%3Cg transform='translate(99 231)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -1.3v2.6M4.7 -1.3v2.6'/%3E%3C/g%3E%3Cg transform='translate(231 231)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-3.8 0.4h3M3.2 0.4h3'/%3E%3C/g%3E%3Cg transform='translate(363 231)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b fine' d='M-4.6 1.5q2.3 -5 4.6 0M2.4 1.5q2.3 -5 4.6 0'/%3E%3C/g%3E%3Cg transform='translate(495 231)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -1.3v2.6M4.7 -1.3v2.6'/%3E%3C/g%3E%3Cg transform='translate(33 297)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -1.3v2.6M4.7 -1.3v2.6'/%3E%3C/g%3E%3Cg transform='translate(165 297)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 0.5v3.4M4.7 0.5v3.4'/%3E%3C/g%3E%3Cg transform='translate(297 297)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -1.7v3.4M3.2 0.4h3'/%3E%3C/g%3E%3Cg transform='translate(429 297)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -1.3v2.6M4.7 -1.3v2.6'/%3E%3C/g%3E%3Cg transform='translate(99 363)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b fine' d='M-4.6 1.5q2.3 -5 4.6 0M2.4 1.5q2.3 -5 4.6 0'/%3E%3C/g%3E%3Cg transform='translate(231 363)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -1.7v3.4M3.2 0.4h3'/%3E%3C/g%3E%3Cg transform='translate(363 363)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -2.6v5.2M4.7 -2.6v5.2'/%3E%3C/g%3E%3Cg transform='translate(495 363)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-0.3 -1.7v3.4M6.7 -1.7v3.4'/%3E%3C/g%3E%3Cg transform='translate(33 429)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 0.5v3.4M4.7 0.5v3.4'/%3E%3C/g%3E%3Cg transform='translate(165 429)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -1.3v2.6M4.7 -1.3v2.6'/%3E%3C/g%3E%3Cg transform='translate(297 429)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b fine' d='M-4.6 1.5q2.3 -5 4.6 0M2.4 1.5q2.3 -5 4.6 0'/%3E%3C/g%3E%3Cg transform='translate(429 429)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -1.3v2.6M4.7 -1.3v2.6'/%3E%3C/g%3E%3Cg transform='translate(99 495)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -1.3v2.6M4.7 -1.3v2.6'/%3E%3C/g%3E%3Cg transform='translate(231 495)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-0.3 -1.7v3.4M6.7 -1.7v3.4'/%3E%3C/g%3E%3Cg transform='translate(363 495)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-4.9 -1.7v3.4M2.1 -1.7v3.4'/%3E%3C/g%3E%3Cg transform='translate(495 495)'%3E%3Cpath d='M-14 14V0a14 14 0 1 1 14 14z'/%3E%3Cpath class='b' d='M-2.3 -1.3v2.6M4.7 -1.3v2.6'/%3E%3C/g%3E%3C/svg%3E");--crowd-size:528px}/* ground:end */
+.page{min-height:100vh;min-height:100svh;max-width:60rem;margin:0 auto;padding:clamp(1.5rem,5vw,3rem) clamp(1.25rem,5vw,3rem);display:flex;flex-direction:column}
+.first{flex:1;display:flex;flex-direction:column;justify-content:center;padding:2rem 0 3rem}
+a{color:inherit;text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--cm-focus);outline-offset:2px}
+
+/* now and then one face in the crowd perks up: it darkens a little, bobs and blinks, then settles back into the crowd.
+   A patch of page colour covers that face in the tile and carries a copy of it, which does the moving. The mark's own
+   timing and curves, from the tokens; at rest the copy is exactly as faint as the tile, so nothing shows between turns. */
+.blinker{position:fixed;left:0;top:0;z-index:-1;width:34px;height:34px;background:var(--cm-raised);pointer-events:none;visibility:hidden}
+.blinker b{position:absolute;left:2.2px;top:2.2px;width:29.6px;height:29.6px;border:1.6px solid var(--cm-text);border-radius:50% 50% 50% 0;opacity:.045}
+.blinker i{position:absolute;left:9.2px;top:10.2px;width:3.4px;height:6px;border-radius:var(--cm-r-full);background:var(--cm-text)}
+.blinker i+i{left:16.2px}
+.blinker.on{visibility:visible}
+.blinker.on b{animation:crowd-perk calc(var(--cm-mark-blink)*3) var(--cm-ease)}
+.blinker.on i{animation:crowd-blink var(--cm-mark-blink) calc(var(--cm-mark-blink)*1.1)}
+@keyframes crowd-perk{22%,70%{opacity:.2;translate:0 -2px}}
+@keyframes crowd-blink{from{animation-timing-function:var(--cm-mark-shut)}34%,50%{transform:scaleY(.2);animation-timing-function:var(--cm-mark-open)}}
+
+h1{margin:0;font-size:clamp(2.6rem,9vw,5.25rem);line-height:1;letter-spacing:-.035em;font-weight:700;text-wrap:balance}
+/* the word a note is pinned to keeps a highlighter wash, exactly as the tool marks quoted words */
+h1 .q{background:var(--cm-accent);color:var(--cm-pin-ink);padding:0 .06em;margin:0 -.06em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+
+/* the way in: one line to hand to a coding agent */
+.snippet{margin-top:clamp(2rem,5vw,3rem);width:fit-content;max-width:100%;display:flex;align-items:stretch;border:1px solid var(--cm-control-edge);border-radius:var(--cm-r-md);background:var(--cm-base);overflow:hidden}
+.snippet code{flex:1;min-width:0;padding:.8rem 1rem;font:.92rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--cm-text);overflow-wrap:anywhere}
+.snippet button{flex:none;border:0;border-left:1px solid var(--cm-control-edge);padding:0 1rem;min-width:8rem;background:var(--cm-accent);color:var(--cm-on-accent);font:inherit;font-size:.95rem;font-weight:var(--cm-fw-strong);cursor:pointer;transition:background-color var(--cm-fast) var(--cm-ease)}
+.snippet button:hover{background:var(--cm-accent-deep)}
+
+footer{color:var(--cm-text-meta);font-size:.95rem;display:flex;flex-wrap:wrap;gap:.5rem 1.5rem}
+footer{padding-right:4.5rem}   /* the tool's launcher sits in the bottom right corner */
+/* on a phone the tool's launcher sits in the bottom corner: keep the links clear of it */
+@media (max-width:40rem){.page{padding-bottom:5.5rem}}
+</style>
+</head>
+<body>
+<span class="blinker" id="blinker" aria-hidden="true"><b><i></i><i></i></b></span>
+<main class="page">
+  <div class="first">
+    <h1 id="hero-line">Make your prototype <span class="q">crittable</span>.</h1>
+    <div class="snippet">
+      <code id="tag">Add github.com/PhilMcClelland/crittablejs to this prototype</code>
+      <button type="button" id="copy" aria-live="polite">Copy prompt</button>
+    </div>
+  </div>
+  <footer>
+    <a href="https://github.com/PhilMcClelland/crittablejs">GitHub</a>
+    <a href="https://persistablejs.philmcclelland.com">Shares notes through Persistable.js</a>
+  </footer>
+</main>
+
+<script>
+/* Copy the install line. */
+(function () {
+  var btn = document.getElementById('copy'), text = document.getElementById('tag').textContent, back = 0;
+  function done(ok) { btn.textContent = ok ? 'Copied' : 'Press Ctrl+C'; clearTimeout(back); back = setTimeout(function () { btn.textContent = 'Copy prompt'; }, 1600); }
+  btn.addEventListener('click', function () {
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(function () { done(true); }, pick); } else pick();
+  });
+  function pick() {   // no clipboard permission: select the line so the reader can copy it themselves
+    var r = document.createRange(); r.selectNodeContents(document.getElementById('tag'));
+    var s = getSelection(); s.removeAllRanges(); s.addRange(r); done(false);
+  }
+})();
+
+/* The crowd in the background: every two to five seconds one plain face that the reader can see perks up and blinks. Not for readers who ask for less motion. */
+/* crowd:start */var CROWD = {"tile":528,"left":-2.3,"right":4.7,"open":[[99,99],[99,231],[495,231],[33,297],[429,297],[165,429],[429,429],[99,495],[495,495]]};/* crowd:end */
+(function () {
+  var el = document.getElementById('blinker');
+  if (!el || !CROWD.open.length || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+  function blink() {
+    setTimeout(blink, 2200 + Math.random() * 3300);
+    if (document.hidden) return;
+    /* only faces a reader can see: inside the view, and not under the tool's panel (which pads the page aside when open) */
+    var root = document.documentElement, T = CROWD.tile, seen = [];
+    var lo = parseFloat(getComputedStyle(root).paddingLeft) || 0, hi = innerWidth - (parseFloat(getComputedStyle(root).paddingRight) || 0);
+    for (var tx = 0; tx < innerWidth; tx += T) for (var ty = 0; ty < innerHeight; ty += T) CROWD.open.forEach(function (at) {
+      var x = at[0] + tx, y = at[1] + ty;
+      if (x > lo + 20 && x < hi - 20 && y > 20 && y < innerHeight - 20) seen.push([x, y]);
+    });
+    if (!seen.length) return;
+    var pick = seen[Math.floor(Math.random() * seen.length)];
+    el.style.transform = 'translate(' + (pick[0] - 17) + 'px,' + (pick[1] - 17) + 'px)';
+    el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+  }
+  el.addEventListener('animationend', function (e) { if (e.animationName === 'crowd-perk') el.classList.remove('on'); });
+  setTimeout(blink, 2500);
+})();
+
+/* The tool on this page is for trying. It starts with two sample notes, and what a visitor adds is kept for this tab only:
+   no note is sent anywhere, nothing a visitor writes is shown to anyone else, and it is gone when the tab closes. (The
+   host adds its own page-view counter to the page, with no cookies; it sees that the page was opened, never a note.) */
+window.CRITTABLE_CONFIG = { storagePrefix: 'crittable-site', storage: 'session', productName: 'Crittable.js', panelOpen: 'always', theme: 'light' };
+(function () {
+  var KEY = 'crittable-site.threads';
+  try {
+    if (sessionStorage.getItem(KEY)) return;
+    var path = location.pathname, route = (/\/index\.html?$/.test(path) ? path.slice(0, path.lastIndexOf('/') + 1) : path) || '/';
+    route += location.search;
+    var line = document.getElementById('hero-line').textContent, word = 'crittable', at = line.indexOf(word), now = Date.now();
+    var who = function (id, name) { return { authorId: id, authorName: name }; };
+    var note = function (id, p, text, mins, anchor, replies) {
+      return Object.assign({ v: 1, id: id, text: text, created: now - mins * 6e4, updated: now - mins * 6e4, route: route, resolved: false, anchor: anchor, replies: replies || [] }, p);
+    };
+    var rowan = who('sample-rowan', 'Rowan Vale'), ash = who('sample-ash', 'Ash Moor');
+    sessionStorage.setItem(KEY, JSON.stringify([
+      note('sample-1', rowan, 'This note is pinned to one word. Open it and reply. What you add here is only for you, and only until you close the tab.', 95,
+        { k: 'css', v: '#hero-line', dx: 40, dy: 40, sel: { text: word, from: at, to: at + word.length } }),
+      note('sample-2', ash, 'Does my agent need anything else?', 40, { k: 'css', v: '#tag', dx: 250, dy: 12 },
+        [Object.assign({ v: 1, id: 'sample-2-r1', text: 'No. AGENTS.md in the repository tells it what to copy and which tag to add.', at: now - 22 * 6e4 }, rowan)])
+    ]));
+  } catch (e) { /* storage is off: the tool still runs, with nothing kept */ }
+})();
+</script>
+<script src="crittable/crittable.js"></script>
+</body>
+</html>

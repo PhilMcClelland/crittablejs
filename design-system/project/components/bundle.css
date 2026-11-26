@@ -1,0 +1,390 @@
+/* Ink and Highlighter: component styles. Generated from crittable/pinwall.js by scripts/export_design_system.js; do not edit. */
+:root{--pin-half:14px;--pin-d:32px;--panel:320px;--cm-font:var(--font-sans)}
+*{box-sizing:border-box;font-family:var(--cm-font);font-size:var(--cm-fs-body);line-height:var(--cm-lh);font-weight:var(--cm-fw-regular)}
+button{cursor:pointer;color:inherit}
+b,strong,h2,h3{font-weight:var(--cm-fw-strong)}
+:focus-visible,.is-focus{outline:2px solid var(--cm-focus);outline-offset:2px}
+.sr{overflow:hidden;position:absolute;height:1px;width:1px;clip:rect(0 0 0 0)}
+.eyes{position:absolute;inset:0;display:block;color:var(--cm-pin-ink);pointer-events:none;transform-origin:50% 49.5%}
+.eyes i{position:absolute;left:40%;top:49.5%;width:15.5%;height:27.3%;translate:-50% -50%;border-radius:var(--cm-r-full);background:currentColor;
+  transition:left var(--cm-medium) var(--cm-ease),top var(--cm-medium) var(--cm-ease),width var(--cm-medium) var(--cm-ease),height var(--cm-medium) var(--cm-ease),rotate var(--cm-medium) var(--cm-ease),background-color var(--cm-fast) var(--cm-ease)}
+.eyes i+i{left:66.4%}
+/* the blink closes straight down: the pills flatten and widen a little, rest shut for a beat, then open hard and settle. Nothing swaps and nothing turns. */
+@keyframes cm-blink{from{animation-timing-function:var(--cm-mark-shut)}34%,50%{transform:scaleY(.2);animation-timing-function:var(--cm-mark-open)}}
+.ic{display:inline-grid;place-items:center;width:1.25em;height:1.25em;flex:none}
+.ic svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* LAUNCHER */
+.dock{z-index:var(--cm-z-dock);gap:var(--cm-s2);position:fixed;left:0;top:0;display:flex;pointer-events:auto;transition:transform var(--cm-medium) var(--cm-ease)}
+.dock.dragging{transition:none}
+.dock.dragging button{cursor:grabbing;box-shadow:0 0 0 1.5px var(--cm-pin-ring),var(--cm-pin-lift);transition:none}
+.dock.still{transition:none}
+.dock.is-hidden{display:none}
+.dock button{position:relative;width:44px;height:44px;border-radius:var(--cm-r-full);display:grid;place-items:center;font-size:20px;
+  background:var(--cm-accent);color:var(--cm-pin-ink);border:1.5px solid var(--cm-pin-ink);box-shadow:0 0 0 1.5px var(--cm-pin-ring),var(--cm-pin-drop);
+  transition:translate var(--cm-fast) var(--cm-ease),box-shadow var(--cm-fast) var(--cm-ease),background-color var(--cm-fast) var(--cm-ease),color var(--cm-fast) var(--cm-ease)}
+.dock button:first-child{border-radius:50% 50% 50% var(--cm-r-tip)}
+.dock button:hover,.dock button.is-hover{translate:0 -2px;box-shadow:0 0 0 1.5px var(--cm-pin-ring),var(--cm-pin-lift)}
+.dock button:active,.dock button.is-pressed{translate:0 1px}
+/* at rest the launcher is the mark: the highlighter pin, with nothing in it. While a note is being placed the yellow is on the pointer, so the button turns to ink and offers the way out. */
+.dock .on,.dock .on:hover,.dock .on.is-hover{background:var(--cm-pin-ink);color:var(--cm-pin-paper)}
+/* LAUNCHER.Armed: the eyes slide together, stretch and cross into the way out. One face, two looks; nothing is swapped. */
+.dock .on .eyes{color:var(--cm-pin-paper)}
+.dock .on .eyes i{left:50%;top:50%;width:9.5%;height:45%;rotate:45deg}
+.dock .on .eyes i+i{rotate:-45deg}
+/* the one playful touch: the mark blinks once when the pointer arrives */
+.dock button:not(.on):hover .eyes,.dock button.is-hover:not(.on) .eyes{animation:cm-blink var(--cm-mark-blink)}
+
+/* quiet error line / banner (EMPTY.StorageFailed) */
+.note-banner{z-index:var(--cm-z-banner);position:fixed;top:var(--cm-s3);left:var(--cm-s3);max-width:320px;pointer-events:auto;padding:var(--cm-s2) var(--cm-s3);
+  background:var(--cm-pin-ink);color:var(--cm-pin-paper);border:0;
+  border-radius:var(--cm-r-md);box-shadow:0 0 0 1px var(--cm-pin-ring),var(--cm-pin-drop);animation:cm-fade var(--cm-fast) var(--cm-ease)}
+.err{color:var(--cm-err);font-size:var(--cm-fs-meta);font-weight:var(--cm-fw-strong)}
+.err:empty{display:none}
+
+/* PIN */
+.pin{position:fixed;left:0;top:0;width:var(--pin-d);height:var(--pin-d);margin:calc(var(--pin-half) - var(--pin-d)) 0 0 var(--pin-half);padding:0;
+  touch-action:none;pointer-events:auto;display:grid;place-items:center;
+  border-radius:50% 50% 50% var(--cm-r-tip);border:1.5px solid var(--cm-pin-ink);background:var(--cm-accent);color:var(--cm-pin-ink);font-size:16px;
+  box-shadow:0 0 0 1px var(--cm-pin-ring),var(--cm-pin-drop);
+  transition:translate var(--cm-fast) var(--cm-ease),opacity var(--cm-fast) var(--cm-ease),background-color var(--cm-fast) var(--cm-ease),box-shadow var(--cm-fast) var(--cm-ease)}
+.pin .face{width:calc(var(--pin-d) - 9px);height:calc(var(--pin-d) - 9px);pointer-events:none;background:var(--av);color:var(--av-ink)}
+.pin:hover,.pin.is-hover,.pin.hot{translate:0 -2px}
+.pin.hot{box-shadow:0 0 0 3px var(--cm-accent),0 0 0 4.5px var(--cm-pin-ink)}
+.pin[aria-expanded=true]{background:var(--cm-pin-ink);box-shadow:0 0 0 3px var(--cm-accent),0 0 0 4.5px var(--cm-pin-ink)}
+.pin.lifted{translate:0 -4px;cursor:grabbing;box-shadow:0 0 0 1px var(--cm-pin-ring),var(--cm-pin-lift)}
+.pin.done{background:var(--cm-pin-paper);opacity:.72}
+.pin.done .face{filter:grayscale(1)}
+/* the resolved check is a real element after the face, so it paints above it, and a drawn glyph, so it centres */
+.pin .ok{position:absolute;z-index:1;bottom:-5px;right:-5px;width:14px;height:14px;display:grid;place-items:center;border-radius:var(--cm-r-full);background:var(--cm-pin-ink);color:var(--cm-pin-paper);border:1.5px solid var(--cm-pin-paper);pointer-events:none}
+.pin .ok .ic{width:9px;height:9px}
+.pin .ok svg{stroke-width:3}
+.pin.rider .ok{display:none}
+.pin[data-unread]::after{content:"";position:absolute;top:-5px;right:-5px;width:10px;height:10px;border-radius:var(--cm-r-full);
+  background:var(--cm-pin-ink);border:2px solid var(--cm-pin-paper);transition:opacity var(--cm-fast) var(--cm-ease)}
+.pin.draft{background:var(--cm-pin-paper);border-style:dashed;animation:cm-plant var(--cm-plant) var(--cm-ease)}
+.pin.glide{transition:transform var(--cm-medium) var(--cm-ease)}
+/* a pin riding its bubble: the bubble carries the pin's shape now, so the pin is only the avatar, above the card */
+.bubble,.pin{--morph:calc(var(--cm-medium)*.8)}
+.pin.rider,.pin.rider:hover,.pin.rider.hot,.pin.rider[aria-expanded=true]{background:transparent;border-color:transparent;box-shadow:none;opacity:1;
+  z-index:calc(var(--cm-z-card) + 1)!important;transition:translate var(--morph) var(--cm-ease)}
+/* only the avatar travels: the pin's outline and point never leave the anchor, so keyboard focus rings the whole note instead */
+.pin.rider:focus-visible{outline:none}
+.pin.rider:focus-visible~.bubble{outline:2px solid var(--cm-focus);outline-offset:2px}
+.pin.rider::before,.pin.rider::after{display:none}
+/* the wash on a target: the highlighter laid over the thing a note is, or would be, pinned to. It is ours, so the host element is never touched. */
+.wash{position:fixed;left:0;top:0;pointer-events:none;background:var(--cm-pin-wash);border-radius:var(--cm-r-sm);opacity:0;transition:opacity var(--cm-fast) var(--cm-ease)}
+.wash.on{opacity:var(--wash-k,1)}
+.wash.hop{transition:opacity var(--cm-fast) var(--cm-ease),transform var(--cm-fast) var(--cm-ease),width var(--cm-fast) var(--cm-ease),height var(--cm-fast) var(--cm-ease),border-radius var(--cm-fast) var(--cm-ease)}
+@keyframes cm-plant{from{translate:4px -16px;opacity:0}70%{translate:0 1.5px}}
+
+/* cards: shared shell */
+.card{z-index:var(--cm-z-card);position:fixed;pointer-events:auto;background:var(--cm-raised);color:var(--cm-text);border:1px solid var(--cm-card-edge);
+  border-radius:var(--cm-r-lg) var(--cm-r-lg) var(--cm-r-lg) var(--cm-r-tip);box-shadow:var(--cm-elev-3);padding:var(--cm-s3)}
+.card[data-tip=tl]{border-radius:var(--cm-r-tip) var(--cm-r-lg) var(--cm-r-lg) var(--cm-r-lg)}
+.card[data-tip=tr]{border-radius:var(--cm-r-lg) var(--cm-r-tip) var(--cm-r-lg) var(--cm-r-lg)}
+.card[data-tip=br]{border-radius:var(--cm-r-lg) var(--cm-r-lg) var(--cm-r-tip) var(--cm-r-lg)}
+/* BUBBLE: one object per note. At rest it is the pin; on hover it grows into the preview; on click, into the thread.
+   The sharp corner stays on the anchor and the avatar rides the top edge. Width and height are real, so nothing is revealed or swapped. */
+.bubble{z-index:var(--cm-z-card);position:fixed;left:0;top:0;pointer-events:auto;background:var(--cm-raised);color:var(--cm-text);
+  border:1px solid var(--cm-card-edge);border-radius:var(--cm-r-lg) var(--cm-r-lg) var(--cm-r-lg) var(--cm-r-tip);box-shadow:var(--cm-elev-3);
+  transition:width var(--morph) var(--cm-ease),height var(--morph) var(--cm-ease),border-radius var(--morph) var(--cm-ease),
+    background-color var(--morph) var(--cm-ease),border-color var(--morph) var(--cm-ease),box-shadow var(--morph) var(--cm-ease)}
+.bubble[data-mode=peek]{box-shadow:var(--cm-elev-2);cursor:pointer}
+.bubble[data-tip=tl]{border-radius:var(--cm-r-tip) var(--cm-r-lg) var(--cm-r-lg) var(--cm-r-lg)}
+.bubble[data-tip=tr]{border-radius:var(--cm-r-lg) var(--cm-r-tip) var(--cm-r-lg) var(--cm-r-lg)}
+.bubble[data-tip=br]{border-radius:var(--cm-r-lg) var(--cm-r-lg) var(--cm-r-tip) var(--cm-r-lg)}
+.bubble.morphing{overflow:hidden}
+.bubble.bud{border:1.5px solid var(--cm-pin-ink);box-shadow:0 0 0 1px var(--cm-pin-ring),var(--cm-pin-drop);
+  border-radius:calc(var(--pin-d)/2) calc(var(--pin-d)/2) calc(var(--pin-d)/2) var(--cm-r-tip)}
+/* the highlighter never spreads: it is a pin-sized patch that stays on the point and fades there, while the paper grows out around it.
+   Folding back, it returns only as the bubble reaches pin size again. */
+.bubble::before{content:"";position:absolute;left:0;bottom:0;width:calc(var(--pin-d) - 3px);height:calc(var(--pin-d) - 3px);pointer-events:none;
+  border-radius:calc(var(--pin-d)/2) calc(var(--pin-d)/2) calc(var(--pin-d)/2) calc(var(--cm-r-tip) - 1.5px);background:var(--cm-accent);opacity:0;
+  transition:opacity var(--cm-fast) var(--cm-ease)}
+.bubble[data-tip$=r]::before{left:auto;right:0}
+.bubble[data-tip^=t]::before{bottom:auto;top:0}
+.bubble.bud::before{opacity:1;transition-delay:calc(var(--morph) - var(--cm-fast))}
+.bubble.done::before{background:var(--cm-pin-paper)}
+.bubble>.card{position:absolute;left:0;top:0;right:auto;bottom:auto;border:0;background:none;box-shadow:none;border-radius:0;animation:none!important;z-index:auto;
+  transition:transform var(--morph) var(--cm-ease),opacity var(--cm-fast) var(--cm-ease)}
+.bubble.bud>.card{opacity:0}
+/* the riding pin stands in for the first avatar, which only keeps its seat */
+.bubble .peek .lead>.face,.bubble .msg:not(.reply)>.face{visibility:hidden}
+/* the preview is the thread's first message over the thread's own reply row, so a click only adds what sits between them */
+.peek{width:312px;padding:0}
+.peek .lead{display:flex;gap:var(--cm-s2);padding:var(--cm-s3)}
+.peek .txt{min-width:0;flex:1}
+.peek .compose{padding:var(--cm-s2) var(--cm-s3) var(--cm-s3);border-top:1px solid var(--cm-border-hair)}
+.peek .compose *{pointer-events:none}
+.peek .mock{flex:1;min-height:32px;padding:6px var(--cm-s2);background:var(--cm-input);color:var(--cm-text-hint);border:1px solid var(--cm-border);border-radius:var(--cm-r-sm)}
+.peek .body{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+@keyframes cm-fade{from{opacity:0}}
+.who{display:flex;align-items:center;gap:var(--cm-s2);min-width:0}
+.who b{color:var(--cm-text-author);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who time,.meta{font-size:var(--cm-fs-meta);color:var(--cm-text-meta)}
+.face{width:26px;height:26px;border-radius:var(--cm-r-full);display:grid;place-items:center;flex:none;background:var(--face);color:var(--face-ink);
+  font-size:var(--cm-fs-face);font-weight:var(--cm-fw-strong);position:relative;overflow:hidden}
+.face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.body{color:var(--cm-text-body);overflow-wrap:anywhere;white-space:pre-wrap}
+
+/* CARD (thread card) */
+.thread{width:312px;max-height:min(72vh,520px);display:flex;flex-direction:column;padding:0;
+  animation:cm-fade var(--cm-fast) var(--cm-ease)}
+.thread.steady{animation:none}
+/* CARD.Adrift: the pin has nowhere to be on this page, so the note is a dialog: centred, no sharp corner (there is no anchor to
+   point at), the page dimmed behind it by the card's own spread shadow */
+.thread.adrift{z-index:calc(var(--cm-z-panel) + 1);top:0;bottom:0;margin:auto;height:fit-content;border-radius:var(--cm-r-lg);animation:cm-fade var(--cm-fast) var(--cm-ease);
+  box-shadow:var(--cm-elev-3),0 0 0 200vmax color-mix(in srgb,var(--cm-pin-ink) 38%,transparent)}
+.thread.adrift.steady{animation:none}
+.thread.is-sheet{border-radius:var(--cm-r-lg)!important;width:340px;max-height:60vh}
+.thread.adrift.leaving{animation:cm-fade var(--cm-fast) var(--cm-ease) reverse forwards}
+.adrift-why{margin:0 var(--cm-s3) var(--cm-s2);padding:var(--cm-s1) var(--cm-s2);border-radius:var(--cm-r-sm);background:var(--cm-strip);
+  color:var(--cm-text-meta);font-size:var(--cm-fs-meta)}
+.thread.leaving{animation:cm-fade-out var(--cm-fast) var(--cm-ease) forwards;pointer-events:none}
+@keyframes cm-fade-out{to{opacity:0}}
+.thread>header{display:flex;align-items:center;gap:var(--cm-s1);padding:var(--cm-s2) var(--cm-s2) var(--cm-s1) var(--cm-s3);position:relative}
+.thread>header h2{flex:1;min-width:0;margin:0;font-size:var(--cm-fs-head);color:var(--cm-text)}
+.thread>header h2.q{flex:0 1 auto;margin-right:auto;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  background:linear-gradient(var(--cm-selected),var(--cm-selected)) no-repeat 0 62%/100% 58%}
+.thread:focus{outline:none}
+.tb{display:inline-flex;align-items:center;gap:var(--cm-s1);height:28px;padding:0 var(--cm-s2);flex:none;border:1px solid var(--cm-control-edge);border-radius:var(--cm-r-md);
+  background:transparent;color:var(--cm-text);font-size:var(--cm-fs-meta);font-weight:var(--cm-fw-strong);white-space:nowrap;
+  transition:background-color var(--cm-fast) var(--cm-ease)}
+.tb *{font-size:inherit;font-weight:inherit}
+.tb:hover,.tb.is-hover{background:var(--cm-hover)}
+.tb:disabled{opacity:.4;cursor:default}
+.tb[aria-pressed=true]{color:var(--cm-text-meta)}
+.toast{z-index:var(--cm-z-banner);position:fixed;left:50%;bottom:var(--cm-s5);translate:-50% 0;display:flex;align-items:center;gap:var(--cm-s3);pointer-events:auto;
+  padding:var(--cm-s2) var(--cm-s2) var(--cm-s2) var(--cm-s4);border-radius:var(--cm-r-md);background:var(--cm-pin-ink);color:var(--cm-pin-paper);
+  box-shadow:0 0 0 1px var(--cm-pin-ring),var(--cm-pin-lift);white-space:nowrap;animation:cm-fade var(--cm-fast) var(--cm-ease)}
+.toast button{border:0;border-radius:var(--cm-r-sm);padding:var(--cm-s1) var(--cm-s2);background:var(--cm-accent);color:var(--cm-pin-ink);font-weight:var(--cm-fw-strong)}
+.icb{width:28px;height:28px;padding:0;display:grid;place-items:center;border:0;border-radius:var(--cm-r-sm);background:transparent;color:var(--cm-text-meta);
+  font-size:16px;transition:background-color var(--cm-fast) var(--cm-ease),color var(--cm-fast) var(--cm-ease)}
+.icb:hover,.icb.is-hover{background:var(--cm-hover);color:var(--cm-text)}
+.icb[aria-expanded=true]{background:var(--cm-accent-wash);color:var(--cm-accent-ink)}
+.icb:disabled{opacity:.4;cursor:default}
+.msgs{flex:1;overflow:auto;padding:var(--cm-s1) var(--cm-s3) var(--cm-s3);display:flex;flex-direction:column;gap:var(--cm-s3);
+  scrollbar-width:thin;scrollbar-color:transparent transparent}
+.msgs:hover{scrollbar-color:var(--cm-border-emph) transparent}
+.msg{display:flex;gap:var(--cm-s2);align-items:flex-start}
+.msg>.col{flex:1;min-width:0}
+/* threads are flat, so every message and the reply row share one avatar column and one text column */
+.msg.reply{animation:cm-fade var(--cm-fast) var(--cm-ease)}
+.msg .acts{margin-left:auto;display:flex;gap:var(--cm-s2);opacity:0;transition:opacity var(--cm-fast) var(--cm-ease)}
+.msg:hover .acts,.msg:focus-within .acts{opacity:1}
+@media (hover:none){.msg .acts{opacity:1}}
+.thread .compose .face,.peek .compose .face{width:26px;height:26px;margin-bottom:3px}
+.confirm{border:1px solid var(--cm-border);border-radius:var(--cm-r-md);padding:var(--cm-s2) var(--cm-s3);background:var(--cm-strip)}
+.confirm p{margin:0 0 var(--cm-s2);color:var(--cm-text)}
+.thread.resolved .msgs .body{color:var(--cm-text-meta)}
+
+/* MENU (filter, more, card more-options) */
+.menu{position:absolute;top:calc(100% + var(--cm-s1));right:0;z-index:3;min-width:184px;padding:6px;
+  background:var(--cm-overlay);color:var(--cm-text);border:1px solid var(--cm-border);border-radius:var(--cm-r-lg);box-shadow:var(--cm-elev-3);
+  animation:cm-drop var(--cm-medium) var(--cm-ease)}
+.menu[hidden]{display:none}
+@keyframes cm-drop{from{opacity:0;transform:translateY(-4px)}}
+.menu label,.menu button{display:flex;align-items:center;gap:var(--cm-s2);width:100%;text-align:left;padding:6px var(--cm-s2);
+  border:0;border-radius:var(--cm-r-md);background:transparent;color:var(--cm-text);cursor:pointer;
+  transition:background-color var(--cm-fast) var(--cm-ease)}
+.menu label:hover,.menu button:hover,.menu label:focus-within,.menu .is-hover{background:var(--cm-hover)}
+.menu [role=menuitemradio][aria-checked=true]{background:var(--cm-accent-wash)}
+.menu [aria-disabled=true],.menu button:disabled{opacity:.45;cursor:default;background:transparent}
+.menu hr{border:0;border-top:1px solid var(--cm-border-hair);margin:var(--cm-s1) 0}
+.menu .cap{font-size:var(--cm-fs-meta);color:var(--cm-text-meta);padding:var(--cm-s2) var(--cm-s2) 2px}
+.menu .cap:first-child{padding-top:var(--cm-s1)}
+.menu .cap.why{padding:var(--cm-s1) var(--cm-s2) var(--cm-s1);max-width:200px}
+/* where a menu has boxes and dots, plain actions start on the same text edge as the labels */
+.menu:has(input)>button:not(:has(.sky)){padding-left:calc(14px + var(--cm-s2)*2)}
+.menu kbd,.menu .val{margin-left:auto;font:inherit;font-size:var(--cm-fs-meta);color:var(--cm-text-meta)}
+/* MENU.Theme: one row that steps light, dark, match system. Its sign sets like the sun and the next one rises: the old one drops
+   straight down and the new one comes straight up, inside a box that hides whatever is under the horizon. */
+.sky{position:relative;display:block;flex:none;width:16px;height:16px;margin:0 -1px;overflow:hidden}
+.sky .ic{position:absolute;inset:0;width:auto;height:auto}
+.sky .set{animation:cm-set var(--cm-medium) var(--cm-ease) forwards}
+.sky .rise{animation:cm-rise var(--cm-medium) var(--cm-ease)}
+@keyframes cm-set{to{translate:0 110%}}
+@keyframes cm-rise{from{translate:0 110%}}
+/* a theme step fades the colours across, so the panel does not flash; only while the step is happening */
+.theming,.theming *,.theming *::before,.theming *::after{transition:background-color var(--cm-medium) var(--cm-ease),color var(--cm-medium) var(--cm-ease),border-color var(--cm-medium) var(--cm-ease),box-shadow var(--cm-medium) var(--cm-ease)!important}
+.menu input{appearance:none;margin:0;flex:none;width:14px;height:14px;border:1.5px solid var(--cm-border-emph);display:grid;place-items:center;
+  transition:background-color var(--cm-fast) var(--cm-ease),border-color var(--cm-fast) var(--cm-ease)}
+.menu input[type=radio]{border-radius:var(--cm-r-full)}
+.menu input[type=radio]:checked{border-color:var(--cm-accent-ink)}
+.menu input[type=radio]:checked::after{content:"";width:6px;height:6px;border-radius:var(--cm-r-full);background:var(--cm-accent-ink)}
+.menu input[type=checkbox]{border-radius:4px}
+.menu input[type=checkbox]:checked{background:var(--cm-accent);border-color:var(--cm-accent-ink)}
+.menu input[type=checkbox]:checked::after{content:"";width:3px;height:7px;margin-top:-2px;border:solid var(--cm-on-accent);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.menu .danger{color:var(--cm-err)}
+
+/* COMPOSER (new note bar, reply field, inline edit) */
+textarea,input[type=search],.namefield{width:100%;padding:6px var(--cm-s2);background:var(--cm-input);color:var(--cm-text);resize:none;
+  border:1px solid var(--cm-control-edge);border-radius:var(--cm-r-md);
+  transition:border-color var(--cm-fast) var(--cm-ease),box-shadow var(--cm-fast) var(--cm-ease)}
+textarea::placeholder,input::placeholder{color:var(--cm-text-hint)}
+textarea:focus,input[type=search]:focus,.namefield:focus,textarea.is-focus,input.is-focus{outline:none;border-color:var(--cm-focus);box-shadow:0 0 0 3px var(--cm-halo)}
+textarea.warn,.namefield.warn{border-color:var(--cm-warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--cm-warn) 30%,transparent);transition:none}
+textarea.warn-off{transition:border-color var(--cm-linger) var(--cm-ease),box-shadow var(--cm-linger) var(--cm-ease)}
+.toolong textarea,textarea.toolong{border-color:var(--cm-warn)}
+.count{font-size:var(--cm-fs-meta);color:var(--cm-text-meta);text-align:right}
+.count:empty{display:none}
+.toolong .count{color:var(--cm-warn)}
+.compose{display:flex;gap:var(--cm-s2);align-items:flex-end}
+.compose textarea{min-height:32px;max-height:120px}
+/* asked once, the first time someone writes to a store other people share */
+/* SIDEBAR.Alias: the foot of the panel while someone writes under a made-up name. It says who they are to everyone else and
+   offers to change it; the change happens here, in place. */
+.you{display:flex;align-items:center;gap:var(--cm-s2);padding:var(--cm-s2) var(--cm-s3) var(--cm-s2) var(--cm-s4);border-top:1px solid var(--cm-border-hair);color:var(--cm-text-body);font-size:var(--cm-fs-meta)}
+.you[hidden]{display:none}
+.you.reading .as{white-space:normal}
+.you .mine{display:flex;flex:none}
+.you .face{width:22px;height:22px}
+.you .as{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.you .as b{color:var(--cm-text-author)}
+.you .namefield{flex:1;min-width:0;padding:3px var(--cm-s2);font-size:var(--cm-fs-body)}
+/* naming keeps the row as it was: the face stays, the name becomes a field, the pencil becomes a tick */
+.you:not(.naming) .namefield,.you:not(.naming) .save,.you.naming .as,.you.naming .edit{display:none}
+.compose .face{width:22px;height:22px;margin-bottom:5px}
+.thread .compose{padding:var(--cm-s2) var(--cm-s3) var(--cm-s3);border-top:1px solid var(--cm-border-hair)}
+.composer{width:340px;padding:0;background:var(--cm-overlay);overflow:hidden}
+.composer .strip{background:var(--cm-strip);padding:var(--cm-s2);display:flex;flex-direction:column;gap:var(--cm-s1);min-width:338px}
+.composer .err{padding:0 var(--cm-s1)}
+.thread .card-err{margin:0;padding:var(--cm-s2) var(--cm-s3) 0}
+.send{width:32px;height:32px;flex:none;display:grid;place-items:center;border:1px solid var(--cm-accent-edge);border-radius:var(--cm-r-md);font-size:16px;
+  background:var(--cm-accent);color:var(--cm-on-accent);transition:background-color var(--cm-fast) var(--cm-ease),color var(--cm-fast) var(--cm-ease)}
+.send:hover:not(:disabled),.send.is-hover{background:var(--cm-accent-deep)}
+.send:disabled{background:var(--cm-send-off);color:var(--cm-send-off-ink);border-color:transparent;cursor:not-allowed}
+.saving textarea{opacity:.7}
+.saving .send,.saving .send:disabled{background:var(--cm-accent);color:transparent;position:relative;cursor:progress}
+.saving .send::after{content:"";position:absolute;inset:9px;border-radius:var(--cm-r-full);border:2px solid var(--cm-on-accent);border-right-color:transparent;animation:cm-spin .7s linear infinite}
+@keyframes cm-spin{to{transform:rotate(1turn)}}
+.failed textarea{border-color:var(--cm-err)}
+.row{display:flex;justify-content:flex-end;align-items:center;gap:var(--cm-s2);margin-top:var(--cm-s2)}
+.btn{background:var(--cm-accent);border:1px solid var(--cm-accent-edge);border-radius:var(--cm-r-md);color:var(--cm-on-accent);padding:5px var(--cm-s3);font-weight:var(--cm-fw-strong);
+  transition:background-color var(--cm-fast) var(--cm-ease)}
+.btn:hover:not(:disabled){background:var(--cm-accent-deep)}
+.btn:disabled{background:var(--cm-send-off);color:var(--cm-send-off-ink);border-color:transparent;cursor:not-allowed}
+.btn.danger{background:var(--cm-err);color:var(--cm-on-err);border-color:transparent}
+.quiet{background:transparent;border:0;border-radius:var(--cm-r-md);padding:5px var(--cm-s2);color:var(--cm-text-meta);
+  transition:background-color var(--cm-fast) var(--cm-ease),color var(--cm-fast) var(--cm-ease)}
+.quiet:hover{background:var(--cm-hover);color:var(--cm-text)}
+.link{background:none;border:0;padding:0;color:var(--cm-accent-ink);font-size:var(--cm-fs-meta);text-decoration:underline;text-underline-offset:2px}
+
+/* SIDEBAR */
+aside{z-index:var(--cm-z-panel);position:fixed;top:0;bottom:0;width:var(--panel);display:flex;flex-direction:column;pointer-events:auto;
+  background:var(--cm-base);color:var(--cm-text);box-shadow:var(--cm-elev-edge);transition:transform var(--cm-medium) var(--cm-ease)}
+aside.right{right:0;border-left:1px solid var(--cm-border-hair)}
+aside.left{left:0;border-right:1px solid var(--cm-border-hair)}
+aside.shut{visibility:hidden;transition:transform var(--cm-medium) var(--cm-ease),visibility 0s var(--cm-medium)}
+aside.right.shut{transform:translateX(100%)}
+aside.left.shut{transform:translateX(-100%)}
+aside>header{position:relative;display:flex;align-items:center;gap:2px;padding:var(--cm-s2) var(--cm-s2) var(--cm-s1) var(--cm-s4)}
+aside>header .menu{right:var(--cm-s2)}
+/* the lockup: mark and name read as one unit, so the gap is tighter than between controls and the extension is quiet */
+aside h2{margin:0;flex:1;display:flex;align-items:center;font-size:var(--cm-fs-head);color:var(--cm-text);letter-spacing:-.01em}
+aside h2 .lockup{display:inline-flex;align-items:center;gap:6px}
+aside h2 .ext{color:var(--cm-text-meta);font-weight:var(--cm-fw-regular)}
+/* the mark: the pin, as it is drawn on the page */
+.brand{position:relative;width:22px;height:22px;flex:none;background:var(--cm-accent);border:1.5px solid var(--cm-pin-ink);border-radius:50% 50% 50% var(--cm-r-tip)}
+/* the mark in the panel greets the pointer too: a small bob, and a wink with the eye nearer the name */
+aside h2 .lockup:hover .brand{animation:cm-bob var(--cm-mark-nod) var(--cm-ease)}
+aside h2 .lockup:hover .brand .eyes i+i{animation:cm-wink var(--cm-mark-nod)}
+@keyframes cm-bob{40%{translate:0 -2px}}
+@keyframes cm-wink{from{animation-timing-function:var(--cm-mark-shut)}30%,58%{transform:scaleY(.2);animation-timing-function:var(--cm-mark-open)}}
+/* the field and the button beside it are one row of controls: the same height, whichever is taller */
+.tools{display:flex;align-items:stretch;gap:var(--cm-s2);padding:0 var(--cm-s3) var(--cm-s3);border-bottom:1px solid transparent;transition:border-color var(--cm-fast) var(--cm-ease)}
+/* the line under the head is only there while notes are scrolled up beneath it */
+aside.scrolled .tools{border-bottom-color:var(--cm-border-hair)}
+.find input{align-self:stretch}
+/* the panel's one filled control: it starts a note, which is the only live thing here */
+.tools .add{display:inline-flex;align-items:center;gap:var(--cm-s1);flex:none;white-space:nowrap;padding:5px var(--cm-s2) 5px 6px}
+.tools .add[aria-pressed=true]{background:var(--cm-accent-deep)}
+.find{position:relative;flex:1;display:flex;align-items:center}
+.find>.ic{position:absolute;left:var(--cm-s2);color:var(--cm-text-hint);pointer-events:none}
+.find input{padding-left:28px;padding-right:28px}
+.find input::-webkit-search-cancel-button{display:none}
+.find .clear{position:absolute;right:2px;width:24px;height:24px;font-size:13px;opacity:0;visibility:hidden;transition:opacity var(--cm-fast) var(--cm-ease)}
+aside.searching .find .clear{opacity:1;visibility:visible}
+.icb.filtered{color:var(--cm-accent-ink)}
+.icb.filtered::after{content:"";position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:var(--cm-r-full);background:var(--cm-accent-ink)}
+.icb{position:relative}
+.scroll{flex:1;overflow:auto;padding:var(--cm-s1) var(--cm-s2) var(--cm-s4);scrollbar-width:thin;scrollbar-color:transparent transparent}
+.scroll:hover{scrollbar-color:var(--cm-border-emph) transparent}
+.scroll h3{margin:var(--cm-s4) var(--cm-s2) var(--cm-s1);font-size:var(--cm-fs-meta);font-weight:var(--cm-fw-strong);color:var(--cm-text-meta)}
+.scroll ul{margin:0;padding:0;list-style:none}
+.loading-rows{display:none;padding:var(--cm-s2)}
+aside.loading .loading-rows{display:block}
+aside.loading .listing{display:none}
+.ghost{height:52px;margin:var(--cm-s1) 0;border-radius:var(--cm-r-md);background:var(--cm-hover);animation:cm-breathe 1.2s ease-in-out infinite alternate}
+@keyframes cm-breathe{to{opacity:.45}}
+.load-failed{display:none;margin:var(--cm-s4) var(--cm-s2);color:var(--cm-err)}
+aside.fail .load-failed{display:block}
+aside.fail .listing{display:none}
+
+/* ROW */
+.scroll li{position:relative;display:flex;align-items:flex-start;margin:2px 0;border-radius:var(--cm-r-md);
+  transition:background-color var(--cm-fast) var(--cm-ease),opacity var(--cm-fast) var(--cm-ease)}
+.scroll li:hover,.scroll li.is-hover,.scroll li.hot{background:var(--cm-hover)}
+.scroll li.sel,.scroll li.sel:hover{background:var(--cm-selected)}
+.pick{flex:1;min-width:0;display:flex;gap:var(--cm-s2);align-items:flex-start;text-align:left;padding:var(--cm-s2);
+  border:0;border-radius:var(--cm-r-md);background:transparent;color:var(--cm-text)}
+.pick .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pick .face{width:22px;height:22px;margin-top:2px}
+.pick .who{gap:var(--cm-s1)}
+.pick .who .meta{margin-left:auto;min-width:48px;text-align:right;font-variant-numeric:tabular-nums;transition:opacity var(--cm-fast) var(--cm-ease)}
+/* the row's two toggles take the number's place while the row is hovered, focused or open, so the note text keeps the full width */
+.scroll li:hover .who .meta,.scroll li.is-hover .who .meta,.scroll li:focus-within .who .meta,.scroll li.sel .who .meta,.scroll li.resolved .who .meta,.scroll li.resolving .who .meta{opacity:0}
+.pick .q{align-self:flex-start;max-width:100%;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--cm-text);
+  background:linear-gradient(var(--cm-selected),var(--cm-selected)) no-repeat 0 62%/100% 58%}
+.pick .ex{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:var(--cm-text-body)}
+.pick .replies{color:var(--cm-accent-ink);font-size:var(--cm-fs-meta)}
+.side-tools{position:absolute;top:5px;right:var(--cm-s1);display:flex;align-items:center}
+.tick{width:26px;height:26px;padding:0;display:grid;place-items:center;border:0;border-radius:var(--cm-r-sm);background:transparent;color:var(--cm-text-meta);font-size:15px;
+  opacity:0;transition:opacity var(--cm-fast) var(--cm-ease),background-color var(--cm-fast) var(--cm-ease),color var(--cm-fast) var(--cm-ease)}
+.scroll li:hover .tick,.scroll li.is-hover .tick,.scroll li:focus-within .tick,.scroll li.sel .tick{opacity:1}
+.tick:hover{background:var(--cm-hover);color:var(--cm-accent-ink)}
+/* resolved: the same tick, on a filled disc, as on a resolved pin */
+.tick[aria-pressed=true]{opacity:1}
+.tick[aria-pressed=true] .ic{background:var(--cm-done);color:var(--cm-on-done);border-radius:var(--cm-r-full)}
+.tick[aria-pressed=true] svg{width:68%;height:68%;stroke-width:2.6}
+.dot{flex:none;width:7px;height:7px;border-radius:var(--cm-r-full);background:var(--cm-accent-ink);
+  transition:opacity var(--cm-fast) var(--cm-ease)}
+.scroll li.unread:hover .dot,.scroll li.unread.is-hover .dot,.scroll li.unread.sel .dot{opacity:0;transition-delay:.4s}
+.scroll li.resolved .ex,.scroll li.resolved .who b{color:var(--cm-text-meta)}
+.scroll li.other .pick>.face,.scroll li.lost .pick>.face,
+.scroll li.other .txt>:not(.meta),.scroll li.lost .txt>:not(.meta){opacity:.68}
+.scroll li.resolving .tick{pointer-events:none;opacity:.6}
+@media (hover:none){.tick{opacity:.35}.pick .who .meta{opacity:0}}
+.scroll li.entering{animation:cm-row-in var(--cm-fast) var(--cm-ease)}
+.scroll li.leaving{animation:cm-row-out var(--cm-fast) var(--cm-ease) forwards;pointer-events:none}
+@keyframes cm-row-in{from{opacity:0;transform:translateY(-6px)}}
+@keyframes cm-row-out{to{opacity:0;transform:translateX(6px)}}
+
+/* EMPTY */
+.empty{padding:var(--cm-s6) var(--cm-s4);text-align:center;color:var(--cm-text-meta);animation:cm-fade var(--cm-fast) var(--cm-ease)}
+.empty .ic{width:44px;height:44px;color:var(--cm-text-hint);margin-bottom:var(--cm-s2)}
+.empty .ic svg{stroke-width:1.2}
+.empty p{margin:0 0 var(--cm-s1);color:var(--cm-text-meta)}
+.empty p+p{color:var(--cm-text-hint);font-size:var(--cm-fs-meta)}
+.empty .link{margin-top:var(--cm-s2)}
+.empty .share{margin-top:var(--cm-s4)}
+.empty .share p{color:var(--cm-text-hint);font-size:var(--cm-fs-meta)}
+.empty .share .link{margin-top:0}
+.empty[hidden],.empty .ic[hidden],.empty .share[hidden]{display:none}
+
+/* CARD.Sheet: a card beside a pin cannot fit a phone, so it docks to the bottom edge */
+@media (max-width:520px){aside{width:100%}.thread,.composer{left:var(--cm-s2)!important;right:var(--cm-s2)!important;top:auto!important;bottom:var(--cm-s2)!important;width:auto;max-height:60vh;
+  border-radius:var(--cm-r-lg)!important;transform-origin:center bottom}
+  .composer{animation:cm-fade var(--cm-fast) var(--cm-ease)}.composer .strip{min-width:0}
+  /* a sheet comes from its edge: it slides up, and back down on close */
+  .thread{animation:cm-sheet-in var(--cm-medium) var(--cm-ease)}.thread.leaving{animation:cm-sheet-out calc(var(--cm-medium)*.8) var(--cm-ease) forwards}}
+@keyframes cm-sheet-in{from{translate:0 calc(100% + var(--cm-s2))}}
+@keyframes cm-sheet-out{to{translate:0 calc(100% + var(--cm-s2))}}
+@media (pointer:coarse){:root{--pin-d:40px}.dock button{width:52px;height:52px}.icb,.send,.tb,.acts .link{min-width:40px;min-height:40px}.quiet,.btn{min-height:40px}
+  /* what is typed with a thumb is set at 16px: below that, a phone zooms the whole page in when the field is touched, and
+     does not zoom back. The field is as tall as the button beside it. */
+  textarea,input[type=search],.namefield{font-size:var(--cm-fs-type);min-height:40px;padding:var(--cm-s2) var(--cm-s3)}.compose textarea{min-height:40px}
+  .compose .face{margin-bottom:9px}.thread .compose .face,.peek .compose .face{margin-bottom:7px}   /* still level with the last line of the taller field */
+  .tick{width:40px;height:40px;opacity:.6}.side-tools{top:-2px}.pick .who{min-height:36px}.pick .face{margin-top:7px}.pick .who .meta{min-width:84px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

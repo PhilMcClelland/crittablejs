@@ -1,0 +1,34 @@
+<!-- @dsCard group="Page" height=137 width=880 -->
+<!doctype html>
+<meta charset="utf-8">
+<style>
+html,body{margin:0;background:var(--cm-base);color:var(--cm-text)}
+.ds{display:flex;flex-wrap:wrap;gap:16px;padding:16px;align-items:flex-start}
+.ds figure{margin:0;display:flex;flex-direction:column;gap:var(--cm-s2)}
+.ds figcaption{font-size:var(--cm-fs-meta);color:var(--cm-text-meta)}
+.stage{padding:var(--cm-s4);border:1px dashed var(--cm-border);border-radius:var(--cm-r-md);display:flex;align-items:flex-start;justify-content:center;min-height:64px;position:relative}
+.stage{padding:var(--cm-s4);border:1px dashed var(--cm-border);border-radius:var(--cm-r-md);display:flex;align-items:flex-start;justify-content:center;min-height:64px;position:relative}
+.stage.page{background:var(--cm-strip)}
+.stage .pin,.stage .card,.stage aside,.stage .dock,.stage .note-banner{position:relative;left:auto;top:auto;right:auto;bottom:auto;transform:none}
+.stage .pin{margin:0}
+.stage .toast{position:relative;left:auto;bottom:auto;translate:none}
+.stage .quoted{background:var(--cm-selected);color:var(--cm-text)}
+.stage .menu{position:relative;top:auto;right:auto}
+.stage .thread .menu{position:absolute;top:40px;right:8px}
+.stage .dock{transform:none!important}
+.stage aside{height:300px;width:300px;transition:none}
+.stage aside.half{transform:translateX(35%);opacity:.9}
+.stage:has(aside.half){overflow:hidden}
+.stage .pin{flex:none}
+.stage .scroll{padding:0;flex:none;overflow:visible;width:290px}
+.stage .frozen{animation-play-state:paused!important;animation-delay:-.12s!important}
+.stage .leaving.frozen{animation-delay:-.05s!important}
+.stage .thread.short{max-height:250px}
+.stage .thread.adrift{margin:0;height:auto;box-shadow:var(--cm-elev-3)}
+.stage .ghostnote{color:var(--cm-text-hint);font-size:var(--cm-fs-meta);align-self:center}
+.stage .target{outline:2px solid var(--cm-pin-ink);outline-offset:3px;box-shadow:0 0 0 3px var(--cm-accent);padding:var(--cm-s2) var(--cm-s3);border-radius:2px;color:var(--cm-text-body)}
+.stage .plain{padding:var(--cm-s2) var(--cm-s3);color:var(--cm-text-body)}
+</style>
+<div class="ds">
+<figure><div class="stage page"><div class="toast" role="status"><span>Note 4 resolved</span><button type="button">Undo</button></div></div><figcaption>Undo offered</figcaption></figure>
+</div>

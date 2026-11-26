@@ -303,6 +303,28 @@ const seeded = fail => `(() => { const rows = [
       assert.strictEqual(await shut(), true, 'the same key again shuts it'); assert.strictEqual(await room(), '0px 0px  ', 'and the room is given back');
       assert.strictEqual(await page.evaluate(() => window.__resizes), 3, 'with a resize for that too');
     });
+    await scene('a field grows with its words, then scrolls; the card it is in is fitted to it', {}, null, async ({ page, q, key }) => {
+      const long = 'A note long enough to wrap onto a second and a third line, to see that the field grows as it is typed into.';
+      const size = sel => q(sel, '[Math.round(el.getBoundingClientRect().height), el.scrollHeight > el.clientHeight + 1, el.getBoundingClientRect().bottom <= el.closest(".card").getBoundingClientRect().bottom + 1]').then(a => a[0]);
+      await key('c', 300); for (let i = 0; i < 3; i++) await page.keyboard.press('Escape'); await page.waitForTimeout(300);   // the panel the key opened is shut again
+      await key('c', 300); await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+      await page.evaluate(() => 0); await key('c', 300); await page.mouse.click(430, 300); await page.waitForTimeout(600);
+      const empty = await size('.composer textarea'); assert(empty, 'the new-note field is there');
+      await page.keyboard.type(long); await page.waitForTimeout(300);
+      const some = await size('.composer textarea');
+      assert(some[0] > empty[0] + 20 && !some[1] && some[2], 'three lines of words: taller, nothing scrolled away, still inside its card: ' + JSON.stringify([empty, some]));
+      await page.keyboard.type(' ' + long + ' ' + long + ' ' + long); await page.waitForTimeout(300);
+      const lots = await size('.composer textarea');
+      assert(lots[0] <= 121 && lots[1] && lots[2], 'a great many words: no taller than its limit, and it scrolls: ' + JSON.stringify(lots));
+      await page.keyboard.press('Enter'); await page.waitForTimeout(1200); for (let i = 0; i < 3; i++) await page.keyboard.press('Escape'); await page.waitForTimeout(400);
+      await page.locator('.pin').first().click(); await page.waitForTimeout(900);
+      const fits = () => q('.bubble', '[Math.round(el.getBoundingClientRect().height), Math.round(el.querySelector(".card").getBoundingClientRect().height)]').then(a => a[0]);
+      const r0 = await size('.thread .compose textarea'), s0 = await fits();
+      await page.locator('.thread .compose textarea').click(); await page.keyboard.type(long); await page.waitForTimeout(800);
+      const r1 = await size('.thread .compose textarea'), s1 = await fits();
+      assert(r1[0] > r0[0] + 20 && r1[2], 'the reply field grows too: ' + JSON.stringify([r0, r1]));
+      assert(s1 && Math.abs(s1[0] - s1[1]) <= 3 && s1[1] > s0[1], 'and the note\'s shell is fitted to the taller card: ' + JSON.stringify([s0, s1]));
+    });
     await scene('on a phone what is typed is 16px, in a field as tall as the button beside it', { viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true }, null, async ({ page, q, key }) => {
       await key('c', 400); await page.touchscreen.tap(120, 300); await page.waitForTimeout(700);
       const m = (await q('.composer textarea', '[parseFloat(getComputedStyle(el).fontSize), Math.round(el.getBoundingClientRect().height)]'))[0];

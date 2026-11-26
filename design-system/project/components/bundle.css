@@ -231,7 +231,7 @@ textarea.warn-off{transition:border-color var(--cm-linger) var(--cm-ease),box-sh
 .count:empty{display:none}
 .toolong .count{color:var(--cm-warn)}
 .compose{display:flex;gap:var(--cm-s2);align-items:flex-end}
-.compose textarea{min-height:32px;max-height:120px}
+.compose textarea{min-height:32px;max-height:120px}.editing textarea{max-height:160px}
 /* asked once, the first time someone writes to a store other people share */
 /* SIDEBAR.Alias: the foot of the panel while someone writes under a made-up name. It says who they are to everyone else and
    offers to change it; the change happens here, in place. */

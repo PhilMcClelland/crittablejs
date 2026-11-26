@@ -2,6 +2,10 @@
 
 A page runs the version its script tag names (the `@v…` in a hosted address), or the version of the folder that was copied. `data-version` on the tool's element says which.
 
+## 0.1.2
+
+- A field grows with what is written in it (the new note, a reply, a note or reply being edited), up to about five lines, and scrolls past that. Before, it stayed one line tall and long words scrolled out of sight.
+
 ## 0.1.1
 
 - On a touch device the search field's words no longer start under its magnifying glass, and the name field at the foot of the panel is 16px like the other fields, so a phone does not zoom the page when it is touched. Both came with the touch sizes in 0.1.0.

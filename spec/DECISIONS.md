@@ -310,3 +310,12 @@ None yet.
 - **Decided**: 2026-11-25 → (b), from the maintainer's note that the phone's note field needed its size tuned
 - **Why**: a phone zooms the whole page in when a field with text under 16px is touched, and does not zoom back out, which moves the page the note is about. The field was also shorter than the send button next to it.
 - **Carried out in**: the `fs-type` token and the `(pointer:coarse)` rule in `crittable/pinwall.js`; it covers the note field, the reply field, the name field and the search field. Desktop is unchanged.
+
+## Does a field grow as it is written in?
+- **Asked**: 2026-11-26
+- **Options**: (a) as it was: one line tall, with longer words scrolling inside it; (b) the field grows with its words up to its `max-height` (about five lines), then scrolls
+- **Recommendation**: (b)
+- **Decided**: 2026-11-26 → (b)
+- **Why**: a note can be a thousand characters, and someone writing three lines could see one. The stylesheet already had the 120px limit a growing field needs; nothing made it grow.
+- **Carried out in**: `fit` and `grows` in `crittable/pinwall.js`, on the new-note field, the reply field and the field of a note or reply being edited. The new-note box is anchored by the edge on its pin, so it grows away from the pin; an open note's shell is fitted again each time a field in it changes height.
+- **Left to the maintainer**: how it feels as the card grows under the cursor.

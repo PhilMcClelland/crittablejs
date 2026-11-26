@@ -1,4 +1,4 @@
-/*! Crittable.js 0.1.1 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
+/*! Crittable.js 0.1.2 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
 // Crittable.js: attach notes to spots on a page.
 (() => {
   'use strict';
@@ -10,7 +10,7 @@
   const keyIs = (evt, name) => String(evt.key).toLowerCase() === String(KEYS[name]).toLowerCase();
   const isBack = evt => keyIs(evt, 'back');
   const keyCap = name => /^esc(ape)?$/i.test(KEYS[name]) ? 'Esc' : String(KEYS[name]).toUpperCase();
-  const VERSION = '0.1.1';   // also in the first line of this file and in CHANGELOG.md
+  const VERSION = '0.1.2';   // also in the first line of this file and in CHANGELOG.md
   const GUARD = '__' + OPTS.tagName;
   /* the product name, with a file extension (".js") split off so the lockup can set it quietly */
   const NAME = /^(.+?)(\.[a-z]{1,4})?$/i.exec(String(OPTS.productName)) || [0, String(OPTS.productName), ''];
@@ -668,7 +668,7 @@ textarea.warn-off{transition:border-color var(--cm-linger) var(--cm-ease),box-sh
 .count:empty{display:none}
 .toolong .count{color:var(--cm-warn)}
 .compose{display:flex;gap:var(--cm-s2);align-items:flex-end}
-.compose textarea{min-height:32px;max-height:120px}
+.compose textarea{min-height:32px;max-height:120px}.editing textarea{max-height:160px}
 /* asked once, the first time someone writes to a store other people share */
 /* SIDEBAR.Alias: the foot of the panel while someone writes under a made-up name. It says who they are to everyone else and
    offers to change it; the change happens here, in place. */
@@ -1417,6 +1417,20 @@ aside.fail .listing{display:none}
     return f;
   };
   const iconBtn = (name, attrs) => { const b = build('button', Object.assign({ type: 'button' }, attrs)); b.classList.add('icb'); b.append(icon(name)); return b; };
+  /* A field is as tall as its words, up to the height its stylesheet allows; past that it scrolls. Someone writing
+     three lines sees three lines. `then` is told when the height changed, for a card that has to be fitted again. */
+  const fit = (field, then) => {
+    if (typeof field.scrollHeight !== 'number' || !field.isConnected) return;
+    const was = field.offsetHeight;
+    field.style.height = 'auto';
+    const cs = getComputedStyle(field), edge = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+    field.style.height = Math.ceil(field.scrollHeight + edge) + 'px';
+    if (then && field.offsetHeight !== was) then();
+  };
+  const grows = (field, then) => {
+    field.addEventListener('input', () => fit(field, then));
+    requestAnimationFrame(() => fit(field, then));   // words it was given before it was on the page (a draft kept, a note being edited)
+  };
   const counter = (field, max, wrap, out) => {
     const sync = () => { const n = field.value.length, near = n >= max * 0.9; out.textContent = near ? n + ' / ' + max : ''; wrap.classList.toggle('toolong', n >= max); };
     field.addEventListener('input', sync); sync();
@@ -1468,6 +1482,9 @@ aside.fail .listing{display:none}
           else if (evt.key === 'Enter' && !evt.shiftKey && !evt.isComposing) { halt(evt); replyDraft = reply.value; postReply(th.id); }
         } } });
     reply.value = replyDraft;
+    /* the card's shell is as big as the card was when it opened: when a field in it grows, it is fitted again */
+    const refit = () => { if (bub && bub.card === threadBox && !bub.closing) bubFit(false, null, true); };
+    grows(reply, refit);
     const mine = mineNote(th);
     let main;
     /* one way to edit and one way to confirm a delete, for a note and for a reply: in place, where the words were */
@@ -1482,7 +1499,7 @@ aside.fail .listing{display:none}
       const block = build('div', { class: 'editing' }, box, out, build('div', { class: 'row' },
         build('button', { class: 'quiet', type: 'button', text: 'Cancel', on: { click: cancel } }),
         build('button', { class: 'btn', type: 'button', text: 'Save', on: { click: () => save(box.value) } })));
-      counter(box, max, block, out);
+      counter(box, max, block, out); grows(box, refit);
       if (!spec) setTimeout(() => { box.focus({ preventScroll: true }); box.setSelectionRange(box.value.length, box.value.length); }, 0);
       return block;
     };
@@ -1706,7 +1723,7 @@ aside.fail .listing{display:none}
     const save = build('button', { class: 'send', type: 'button', disabled: true, 'aria-label': 'Save note', title: 'Save note', on: { click: () => on.commit() } }, icon('send'));
     const card = build('div', { class: 'card composer', role: 'dialog', 'aria-label': 'New note' },
       build('div', { class: 'strip' }, build('div', { class: 'compose' }, badge({ authorName: me.name, authorId: me.id }), field, save), out, err));
-    counter(field, OPTS.maxNote, card, out);
+    counter(field, OPTS.maxNote, card, out); grows(field);
     card.addEventListener('pointerdown', evt => evt.stopPropagation());
     return { card, field, save, err, out };
   };

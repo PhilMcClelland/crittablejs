@@ -122,7 +122,7 @@ b,strong,h2,h3{font-weight:var(--cm-fw-strong)}
 @keyframes cm-fade{from{opacity:0}}
 .who{display:flex;align-items:center;gap:var(--cm-s2);min-width:0}
 .who b{color:var(--cm-text-author);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.who time,.meta{font-size:var(--cm-fs-meta);color:var(--cm-text-meta)}
+.who time,.when time,.meta{font-size:var(--cm-fs-meta);color:var(--cm-text-meta)}
 .face{width:26px;height:26px;border-radius:var(--cm-r-full);display:grid;place-items:center;flex:none;background:var(--face);color:var(--face-ink);
   font-size:var(--cm-fs-face);font-weight:var(--cm-fw-strong);position:relative;overflow:hidden}
 .face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -332,6 +332,7 @@ aside.fail .listing{display:none}
 .pick .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .pick .face{width:22px;height:22px;margin-top:2px}
 .pick .who{gap:var(--cm-s1)}
+.pick .when{display:flex;align-items:center;gap:var(--cm-s1);white-space:nowrap}
 .pick .who .meta{margin-left:auto;min-width:48px;text-align:right;font-variant-numeric:tabular-nums;transition:opacity var(--cm-fast) var(--cm-ease)}
 /* the row's two toggles take the number's place while the row is hovered, focused or open, so the note text keeps the full width */
 .scroll li:hover .who .meta,.scroll li.is-hover .who .meta,.scroll li:focus-within .who .meta,.scroll li.sel .who .meta,.scroll li.resolved .who .meta,.scroll li.resolving .who .meta{opacity:0}

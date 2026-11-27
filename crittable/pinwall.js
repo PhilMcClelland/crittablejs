@@ -158,7 +158,9 @@
     if (hex) me.avatar = 'https://gravatar.com/avatar/' + hex + '?s=80&d=404';
   };
   const tintFor = id => { let n = 7; for (const ch of String(id)) n = (n * 31 + ch.charCodeAt(0)) % 360; return n; };
-  const lettersOf = name => (String(name).trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '?').toUpperCase();
+  /* initials from the words of a name, leaving out a part in brackets ("Ben (Gavin's space)" is B) and anything that is not a letter or a digit */
+  const initials = s => s.trim().split(/\s+/).map(w => (w.match(/[\p{L}\p{N}]/u) || [''])[0]).join('').slice(0, 2);
+  const lettersOf = name => (initials(String(name).replace(/\([^)]*\)?/g, ' ')) || initials(String(name)) || '?').toUpperCase();
   const whereAmI = () => {
     const { pathname, search, hash } = location;
     const trimmed = /\/index\.html?$/.test(pathname) ? pathname.slice(0, pathname.lastIndexOf('/') + 1) : pathname;
@@ -559,7 +561,7 @@ b,strong,h2,h3{font-weight:var(--cm-fw-strong)}
 @keyframes cm-fade{from{opacity:0}}
 .who{display:flex;align-items:center;gap:var(--cm-s2);min-width:0}
 .who b{color:var(--cm-text-author);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.who time,.meta{font-size:var(--cm-fs-meta);color:var(--cm-text-meta)}
+.who time,.when time,.meta{font-size:var(--cm-fs-meta);color:var(--cm-text-meta)}
 .face{width:26px;height:26px;border-radius:var(--cm-r-full);display:grid;place-items:center;flex:none;background:var(--face);color:var(--face-ink);
   font-size:var(--cm-fs-face);font-weight:var(--cm-fw-strong);position:relative;overflow:hidden}
 .face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -769,6 +771,7 @@ aside.fail .listing{display:none}
 .pick .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .pick .face{width:22px;height:22px;margin-top:2px}
 .pick .who{gap:var(--cm-s1)}
+.pick .when{display:flex;align-items:center;gap:var(--cm-s1);white-space:nowrap}
 .pick .who .meta{margin-left:auto;min-width:48px;text-align:right;font-variant-numeric:tabular-nums;transition:opacity var(--cm-fast) var(--cm-ease)}
 /* the row's two toggles take the number's place while the row is hovered, focused or open, so the note text keeps the full width */
 .scroll li:hover .who .meta,.scroll li.is-hover .who .meta,.scroll li:focus-within .who .meta,.scroll li.sel .who .meta,.scroll li.resolved .who .meta,.scroll li.resolving .who .meta{opacity:0}
@@ -2257,7 +2260,9 @@ aside.fail .listing{display:none}
           badge(th),
           build('span', { class: 'txt' },
             where === 'This page' ? null : build('span', { class: 'meta', text: where }),
-            build('span', { class: 'who' }, build('b', { text: th.authorName }), build('time', { text: stamp }), fresh ? build('span', { class: 'dot', 'aria-hidden': 'true' }) : null, build('span', { class: 'meta', text: '#' + n })),
+            /* the name has the first line to itself (beside the number), so a long one is not cut short by the time beside it */
+            build('span', { class: 'who' }, build('b', { text: th.authorName }), build('span', { class: 'meta', text: '#' + n })),
+            build('span', { class: 'when' }, build('time', { text: stamp }), fresh ? build('span', { class: 'dot', 'aria-hidden': 'true' }) : null),
             quote ? build('span', { class: 'q', text: quote }) : null,
             build('span', { class: 'ex', text: th.text }),
             th.replies.length ? build('span', { class: 'replies', text: th.replies.length + (th.replies.length === 1 ? ' reply' : ' replies') }) : null,

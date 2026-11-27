@@ -109,6 +109,23 @@ const seeded = fail => `(() => { const rows = [
       await page.locator('.thread .compose textarea').focus(); await key('Escape', 600);
       assert.strictEqual((await q('.thread')).length, 0, 'Escape closes the note'); assert(/^Note 1/.test(await focus()), 'focus returns to the pin');
     });
+    /* a page that stacks its scenes in one fixed place and swaps them with clip-path: a pin shows only with its scene */
+    const stacked = `(() => {
+      const at = { k: 'css', dx: 40, dy: 40 }, row = (id, v) => ({ id, text: 'on ' + v, authorName: 'Ada Vale', authorId: 'u9', created: Date.now() - 6e4, updated: 1, route: '/sample/', resolved: false, replies: [], anchor: Object.assign({}, at, { v }) });
+      const rows = [row('under', '#scene-under'), row('over', '#scene-over'), row('page', 'body')];
+      window.CRITTABLE_CONFIG = { backend: { async load() { return JSON.parse(JSON.stringify(rows)); }, async create(t) { rows.push(t); return t; }, async update() {}, async remove() {} } };
+      document.addEventListener('DOMContentLoaded', () => {
+        for (const [id, z] of [['scene-under', 1], ['scene-over', 2]]) { const d = document.createElement('div'); d.id = id; d.style.cssText = 'position:fixed;left:300px;top:200px;width:300px;height:200px;background:#eee;z-index:' + z; document.body.append(d); }
+      });
+    })();`;
+    await scene('a pin on a scene that is covered or clipped away is not drawn', {}, stacked, async ({ page, q }) => {
+      const shown = async () => Object.fromEntries((await q('.pin', '[el.getAttribute("aria-label"), getComputedStyle(el).visibility]')).map(([l, v]) => [/^Note (\S+)/.exec(l)[1], v]));
+      let s = await shown();
+      assert.deepStrictEqual([s['1'], s['2'], s['3']], ['hidden', 'visible', 'visible'], 'the covered scene\'s pin is hidden; the scene on top and the page show theirs: ' + JSON.stringify(s));
+      await page.evaluate(() => { document.getElementById('scene-over').style.clipPath = 'inset(0 0 100% 0)'; }); await page.waitForTimeout(600);
+      s = await shown();
+      assert.deepStrictEqual([s['1'], s['2'], s['3']], ['visible', 'hidden', 'visible'], 'clipping the top scene away swaps which pin shows: ' + JSON.stringify(s));
+    });
     await scene('the wash on a target: ours, soft, and absent on a target that fills the view', {}, null, async ({ page, q, key }) => {
       const wash = async () => (await q('.wash', '(r => [el.classList.contains("on"), Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)])(el.getBoundingClientRect())'))[0];
       const touched = () => page.evaluate(() => [...document.querySelectorAll('body *')].filter(e => !e.shadowRoot && e.style && (e.style.outline || e.style.boxShadow)).length);

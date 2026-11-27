@@ -1,4 +1,4 @@
-/*! Crittable.js 0.2.0 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
+/*! Crittable.js 0.3.0 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
 // Crittable.js: attach notes to spots on a page.
 (() => {
   'use strict';
@@ -10,7 +10,7 @@
   const keyIs = (evt, name) => String(evt.key).toLowerCase() === String(KEYS[name]).toLowerCase();
   const isBack = evt => keyIs(evt, 'back');
   const keyCap = name => /^esc(ape)?$/i.test(KEYS[name]) ? 'Esc' : String(KEYS[name]).toUpperCase();
-  const VERSION = '0.2.0';   // also in the first line of this file and in CHANGELOG.md
+  const VERSION = '0.3.0';   // also in the first line of this file and in CHANGELOG.md
   const GUARD = '__' + OPTS.tagName;
   /* the product name, with a file extension (".js") split off so the lockup can set it quietly */
   const NAME = /^(.+?)(\.[a-z]{1,4})?$/i.exec(String(OPTS.productName)) || [0, String(OPTS.productName), ''];
@@ -912,6 +912,28 @@ aside.fail .listing{display:none}
     seenMemo.set(elm, { at: clock(), ok });
     return ok;
   };
+  /* Shown is not seen: an element can pass every test above and still be out of sight, under another element (a page that
+     stacks its scenes in one place and swaps them) or clipped away (clip-path, overflow). So the page is asked what is
+     on top at the pin's own spot, the way a click there would be: its pin is drawn only if the answer is the element or
+     inside it. The tool's own layers are looked through. Not asked: the page itself, which is under everything; a spot
+     off the screen, where nothing can be asked; and an element that takes no clicks (pointer-events: none), which the
+     question passes through even where it is plainly in sight. Remembered for a quarter of a second, at that spot. */
+  const coverMemo = new WeakMap();
+  const isOursEl = n => n.localName === OPTS.tagName || n.localName === OPTS.tagName + '-editor';
+  const isCovered = (key, elm, cx, cy, b) => {
+    if (elm === document.body || elm === document.documentElement || typeof document.elementsFromPoint !== 'function') return false;
+    const x = Math.min(Math.max(cx, b.left + 1), b.right - 1), y = Math.min(Math.max(cy, b.top + 1), b.bottom - 1);
+    if (!(x >= 0 && y >= 0 && x < innerWidth && y < innerHeight)) return false;
+    const memo = coverMemo.get(key), now = clock();
+    if (memo && memo.elm === elm && now - memo.at < 250 && Math.abs(memo.x - x) < 2 && Math.abs(memo.y - y) < 2) return memo.no;
+    let no = false;
+    if (getComputedStyle(elm).pointerEvents !== 'none') {
+      const top = document.elementsFromPoint(x, y).find(n => !isOursEl(n));
+      no = !!top && top !== elm && !elm.contains(top);
+    }
+    coverMemo.set(key, { elm, x, y, at: now, no });
+    return no;
+  };
   const quoteOf = th => th.anchor && th.anchor.sel && th.anchor.sel.text ? String(th.anchor.sel.text).trim().split(/\s+/).join(' ') : '';
   const resolveEl = th => {
     const cached = memoEl.get(th.id);
@@ -1084,6 +1106,8 @@ aside.fail .listing{display:none}
         /* the drop already saved the place; it is saved again only if the target moved under the pin while it settled */
         if (enc(th.anchor) !== was) { hold(id); depot.update(id, { anchor: th.anchor }).catch(() => {}).then(() => release(id)); }
       }
+      /* out of sight the same way as an element that is not shown: an open note then waits as a dialog, as it does for one */
+      if (isCovered(entry2, elm, x + PIN_SZ / 2, y + PIN_SZ / 2, b)) { entry2.btn.style.visibility = 'hidden'; markState(id, 'hidden'); continue; }
       entry2.btn.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)';
       entry2.btn.style.zIndex = Math.max(5, zNear(elm) + 1);
       entry2.btn.style.visibility = 'visible';

@@ -2,6 +2,11 @@
 
 A page runs the version its script tag names (the `@v…` in a hosted address), or the version of the folder that was copied. `data-version` on the tool's element says which.
 
+## 0.3.0
+
+- A name is who someone is now. Change yours and every note and reply you have written shows the new one, for everyone, straight away. On Persistable.js each person's name is one object in a new collection, `crittable-people`, matched to notes by the store's own record of who wrote what, so nobody can rename someone else. Notes written before keep the name they carry until their writer next loads the page with a name of their own (a made-up name is not saved for everyone). Nothing changes in the store. Faces are coloured and lettered by name, so a rename recolours your earlier faces too. A store adapter of your own keeps the old behaviour until it adds `setName` (`spec/STORAGE.md`).
+- A pin is no longer drawn over something that covers its element. On a page that stacks scenes in one place and swaps them (by clip-path, overflow or simply laying one over another), a note now shows only while its scene is showing; before, a note on the first scene stayed on screen over every later one. A covered pin's row says "Hidden on this page right now", as for any hidden element. A note on the page itself, or on an element with `pointer-events: none`, is drawn as before.
+
 ## 0.2.0
 
 - `data-token-url`: on a site that already knows who its visitors are, the site's server can say which notes a visitor shares, what to call them, and whether they may write. Add `data-token-url="/api/token"` (an address on the page's own site) beside `data-backend="persistable"` and `data-url`. Each group the site keeps apart has its own notes, a visitor the site names is not asked for a name, and a visitor the site turns away keeps their notes in their own browser. It needs a Persistable.js 0.2.0 Worker with `TOKEN_SECRET` set; `backends/persistable/SETUP.md`, "By token".

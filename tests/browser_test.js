@@ -109,6 +109,17 @@ const seeded = fail => `(() => { const rows = [
       await page.locator('.thread .compose textarea').focus(); await key('Escape', 600);
       assert.strictEqual((await q('.thread')).length, 0, 'Escape closes the note'); assert(/^Note 1/.test(await focus()), 'focus returns to the pin');
     });
+    /* the panel starts shut on a page with the launcher shown: it must never be seen open first and slide away */
+    const watchPanel = `window.__panel = []; (function look() {
+      const h = document.querySelector('pin-note-board'), a = h && h.shadowRoot && h.shadowRoot.querySelector('aside');
+      if (a) { const m = new DOMMatrixReadOnly(getComputedStyle(a).transform); window.__panel.push(Math.round(m.m41)); }
+      if (window.__panel.length < 90) requestAnimationFrame(look);
+    })();`;
+    await scene('on load a shut panel is never drawn open', {}, watchPanel, async ({ page }) => {
+      const seen = await page.evaluate(() => window.__panel);
+      assert(seen.length > 5, 'the panel was sampled from its first frames: ' + seen.length);
+      assert(seen.every(x => x !== 0), 'it was off to the side in every frame, never at rest open: ' + JSON.stringify(seen.slice(0, 12)));
+    });
     /* a page that stacks its scenes in one fixed place and swaps them with clip-path: a pin shows only with its scene */
     const stacked = `(() => {
       const at = { k: 'css', dx: 40, dy: 40 }, row = (id, v) => ({ id, text: 'on ' + v, authorName: 'Ada Vale', authorId: 'u9', created: Date.now() - 6e4, updated: 1, route: '/sample/', resolved: false, replies: [], anchor: Object.assign({}, at, { v }) });

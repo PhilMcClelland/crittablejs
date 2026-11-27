@@ -1,4 +1,4 @@
-/*! Crittable.js 0.3.2 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
+/*! Crittable.js 0.3.3 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
 // Crittable.js: attach notes to spots on a page.
 (() => {
   'use strict';
@@ -10,7 +10,7 @@
   const keyIs = (evt, name) => String(evt.key).toLowerCase() === String(KEYS[name]).toLowerCase();
   const isBack = evt => keyIs(evt, 'back');
   const keyCap = name => /^esc(ape)?$/i.test(KEYS[name]) ? 'Esc' : String(KEYS[name]).toUpperCase();
-  const VERSION = '0.3.2';   // also in the first line of this file and in CHANGELOG.md
+  const VERSION = '0.3.3';   // also in the first line of this file and in CHANGELOG.md
   const GUARD = '__' + OPTS.tagName;
   /* the product name, with a file extension (".js") split off so the lockup can set it quietly */
   const NAME = /^(.+?)(\.[a-z]{1,4})?$/i.exec(String(OPTS.productName)) || [0, String(OPTS.productName), ''];
@@ -2205,7 +2205,12 @@ aside.fail .listing{display:none}
   /* SIDEBAR.ReadOnly: the foot says why nothing here writes */
   const readParts = show => build('footer', { class: 'you reading', hidden: !show }, build('span', { class: 'as', text: 'You are reading. People with the link can add notes.' }));
   const readBox = readParts(READ_ONLY);
-  const panel = build('aside', { 'aria-label': OPTS.sidebarTitle, role: 'region', class: 'loading' },
+  /* The panel is built as it will start, open or shut and on its side, so its first style is its real one: built open and
+     shut a moment later, it would be seen sliding away on load whenever anything measured the page in between.
+     panelOpen: true opens it on a first visit and then remembers what the reader did; 'always' opens it on every load
+     (a page whose point is to show the panel). Never on a phone, where it would cover the page. */
+  const startsOpen = OPTS.panelOpen === 'always' ? !sheetMode() : !!shelf.read('sideOpen', !!OPTS.panelOpen && !sheetMode());
+  const panel = build('aside', { 'aria-label': OPTS.sidebarTitle, role: 'region', class: 'loading ' + (W.side === 'left' ? 'left' : 'right') + (startsOpen ? '' : ' shut') },
     build('header', {}, build('h2', {}, build('span', { class: 'lockup' }, build('span', { class: 'brand', 'aria-hidden': 'true' }, eyes()), build('span', {}, NAME[1], NAME[2] ? build('span', { class: 'ext', text: NAME[2] }) : null))), filterTool, moreTool, sideClose, filterMenu, moreMenu),
     build('div', { class: 'tools' }, build('div', { class: 'find' }, icon('search'), q, qClear), READ_ONLY ? null : addTool),
     build('div', { class: 'scroll' },
@@ -2526,9 +2531,7 @@ aside.fail .listing{display:none}
   (async () => {
     if (!shelf.live && !OPTS.backend) warn('Browser storage is unavailable. Notes will be lost on reload.');
     if (shelf.read('placing', false)) setAiming(true);
-    /* panelOpen: true opens it on a first visit and then remembers what the reader did; 'always' opens it on every load
-       (a page whose point is to show the panel). Never on a phone, where it would cover the page. */
-    if (OPTS.panelOpen === 'always' ? !sheetMode() : shelf.read('sideOpen', !!OPTS.panelOpen && !sheetMode())) toggleSide(true); else seatSide();
+    if (startsOpen) toggleSide(true); else seatSide();
     try { await findGravatar(); } catch (_) {}
     if (SHARED && typeof depot.whoami === 'function') { try { const w = await depot.whoami(); if (w && w.id) Object.assign(me, w); } catch (_) { /* stay as we are */ } }
     await loadAll();

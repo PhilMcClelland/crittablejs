@@ -2,6 +2,10 @@
 
 A page runs the version its script tag names (the `@v…` in a hosted address), or the version of the folder that was copied. `data-version` on the tool's element says which.
 
+## 0.3.3
+
+- Fixed: since 0.3.1, on a page where the launcher shows, the panel could be seen open for a moment on load and then slide shut. It is now built open or shut as it will start, so its first frame is its real one.
+
 ## 0.3.2
 
 - A pin on a scene clipped away entirely by `clip-path` (an `inset()` that meets itself, or a shape with no area) is hidden, on the element or anything around it, even when the scene takes no clicks (`pointer-events: none`), which the covered check in 0.3.0 could not see. `docs/reference.md`, "Pages that swap scenes", says how a page can make sure: give a scene that is not showing `opacity: 0` or `visibility: hidden`.

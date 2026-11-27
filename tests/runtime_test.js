@@ -354,11 +354,23 @@ const test = async (name, fn) => { await fn(); results.push(name); };
     await boot(ro, {}, { id: 'me', name: 'Reader' });
     assert.deepStrictEqual(said, [], 'nothing saved by a reader');
   });
-  await test('names: a name the page gives reaches the store at load', async () => {
+  await test('names: a name the page gives reaches the store at load, only for someone who has written something', async () => {
     const said = [];
     const be = Object.assign(memoryBackend(SEED), { shared: true, async whoami() { return { id: 'me' }; }, async setName(n) { said.push(n); } });
     await boot(be, {}, { id: 'me', name: 'Site Name' });
-    assert.deepStrictEqual(said, ['Site Name']);
+    assert.deepStrictEqual(said, [], 'a visitor who has written nothing leaves no name behind');
+    const mine = SEED.concat([{ id: 'm1', text: 'mine', authorName: 'Old', authorId: 'me', created: 2, updated: 2, route: '/', resolved: false, replies: [], anchor: { k: 'css', v: '#target', dx: 3, dy: 3 } }]);
+    const be2 = Object.assign(memoryBackend(mine), { shared: true, async whoami() { return { id: 'me' }; }, async setName(n) { said.push(n); } });
+    await boot(be2, {}, { id: 'me', name: 'Site Name' });
+    assert.deepStrictEqual(said, ['Site Name'], 'someone with a note saves the name the page gives');
+  });
+  await test('names: the first note saves a name for someone who had written nothing', async () => {
+    const said = [];
+    const be = Object.assign(memoryBackend(SEED), { shared: true, async whoami() { return { id: 'me' }; }, async setName(n) { said.push(n); } });
+    const { root } = await boot(be, {}, { id: 'me', name: 'Site Name' });
+    root.querySelector('button.pin').click(); await settle();
+    await sendReply(root, 'a first reply'); await settle();
+    assert.deepStrictEqual(said, ['Site Name'], 'the first reply saves it: ' + JSON.stringify(said));
   });
   /* ---------- 3. Esc ladder ---------- */
   await test('esc: one level at a time: menu, draft, thread, placing', async () => {

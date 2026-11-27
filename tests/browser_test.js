@@ -112,16 +112,19 @@ const seeded = fail => `(() => { const rows = [
     /* a page that stacks its scenes in one fixed place and swaps them with clip-path: a pin shows only with its scene */
     const stacked = `(() => {
       const at = { k: 'css', dx: 40, dy: 40 }, row = (id, v) => ({ id, text: 'on ' + v, authorName: 'Ada Vale', authorId: 'u9', created: Date.now() - 6e4, updated: 1, route: '/sample/', resolved: false, replies: [], anchor: Object.assign({}, at, { v }) });
-      const rows = [row('under', '#scene-under'), row('over', '#scene-over'), row('page', 'body')];
+      const rows = [row('under', '#scene-under'), row('over', '#scene-over'), row('page', 'body'), row('title', '#card-title')];
       window.CRITTABLE_CONFIG = { backend: { async load() { return JSON.parse(JSON.stringify(rows)); }, async create(t) { rows.push(t); return t; }, async update() {}, async remove() {} } };
       document.addEventListener('DOMContentLoaded', () => {
         for (const [id, z] of [['scene-under', 1], ['scene-over', 2]]) { const d = document.createElement('div'); d.id = id; d.style.cssText = 'position:fixed;left:300px;top:200px;width:300px;height:200px;background:#eee;z-index:' + z; document.body.append(d); }
+        /* a card made clickable all over by a link stretched across it: see-through, so it covers nothing */
+        const card = document.createElement('div'); card.style.cssText = 'position:fixed;left:700px;top:200px;width:300px;height:200px;background:#fff;z-index:3';
+        card.innerHTML = '<h2 id="card-title" style="margin:0;height:100px">A card</h2><a href="#x" style="position:absolute;inset:0"></a>'; document.body.append(card);
       });
     })();`;
     await scene('a pin on a scene that is covered or clipped away is not drawn', {}, stacked, async ({ page, q }) => {
       const shown = async () => Object.fromEntries((await q('.pin', '[el.getAttribute("aria-label"), getComputedStyle(el).visibility]')).map(([l, v]) => [/^Note (\S+)/.exec(l)[1], v]));
       let s = await shown();
-      assert.deepStrictEqual([s['1'], s['2'], s['3']], ['hidden', 'visible', 'visible'], 'the covered scene\'s pin is hidden; the scene on top and the page show theirs: ' + JSON.stringify(s));
+      assert.deepStrictEqual([s['1'], s['2'], s['3'], s['4']], ['hidden', 'visible', 'visible', 'visible'], 'the covered scene\'s pin is hidden; the scene on top, the page and a card under a see-through link show theirs: ' + JSON.stringify(s));
       await page.evaluate(() => { document.getElementById('scene-over').style.clipPath = 'inset(0 0 100% 0)'; }); await page.waitForTimeout(600);
       s = await shown();
       assert.deepStrictEqual([s['1'], s['2'], s['3']], ['visible', 'hidden', 'visible'], 'clipping the top scene away swaps which pin shows: ' + JSON.stringify(s));
@@ -390,13 +393,12 @@ const seeded = fail => `(() => { const rows = [
       const b = await page.locator('text=Order a bunch').first().boundingBox(); await page.mouse.click(b.x + 20, b.y + 8); await page.waitForTimeout(450);
       await page.keyboard.type('written under my own'); await page.keyboard.press('Enter'); await page.waitForTimeout(750); await key('Escape'); await key('Escape');
       const both = await labels();
-      assert(both.some(l => l.includes(' by Ada Vale,')) && both.some(l => l.includes(' by ' + first[1] + ',')), 'the new note carries the new name and the old note keeps its own: ' + both);
+      assert(both.length === 2 && both.every(l => l.includes(' by Ada Vale,')), 'the new note carries the new name, and so does the one written under the made-up name: ' + both);
       await page.reload(); await page.waitForTimeout(3700); await open();
       assert.strictEqual((await foot())[1], 'Ada Vale', 'the name is kept when the tab reloads');
       assert.strictEqual((await labels()).length, 2, 'and so are the notes');
-      const pinOfAda = (await q('.pin:not(.draft)', '(r => [r.left + r.width / 2, r.top + r.height / 2, el.getAttribute("aria-label")])(el.getBoundingClientRect())')).find(p => p[2].includes(first[1]));
       await page.locator('aside button[aria-label="Close list"]').click(); await page.waitForTimeout(400);
-      const again = (await q('.pin:not(.draft)', '(r => [r.left + r.width / 2, r.top + r.height / 2, el.getAttribute("aria-label")])(el.getBoundingClientRect())')).find(p => p[2].includes(first[1]));
+      const again = (await q('.pin:not(.draft)', '(r => [r.left + r.width / 2, r.top + r.height / 2, el.getAttribute("aria-label")])(el.getBoundingClientRect())')).find(p => /^Note 1 /.test(p[2]));
       await page.mouse.click(again[0], again[1]); await page.waitForTimeout(700);
       await page.locator('.thread button[aria-label="More options"]').click(); await page.waitForTimeout(300);
       assert.strictEqual((await q('.thread .menu button', '[el.textContent, el.disabled]')).filter(x => x[0] === 'Edit')[0][1], false, 'the note written under the earlier name is still its writer\'s to edit');

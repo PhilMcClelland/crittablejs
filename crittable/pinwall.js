@@ -913,25 +913,42 @@ aside.fail .listing{display:none}
     return ok;
   };
   /* Shown is not seen: an element can pass every test above and still be out of sight, under another element (a page that
-     stacks its scenes in one place and swaps them) or clipped away (clip-path, overflow). So the page is asked what is
-     on top at the pin's own spot, the way a click there would be: its pin is drawn only if the answer is the element or
-     inside it. The tool's own layers are looked through. Not asked: the page itself, which is under everything; a spot
-     off the screen, where nothing can be asked; and an element that takes no clicks (pointer-events: none), which the
-     question passes through even where it is plainly in sight. Remembered for a quarter of a second, at that spot. */
+     stacks its scenes in one place and swaps them) or clipped away (clip-path, overflow). So the page is asked what lies
+     at the pin's own spot, top to bottom, the way a click there would find it, and the pin is drawn only if the element
+     (or something inside it) is reached before anything that paints over it. Passed through on the way down: the tool's
+     own layers; the element's own ancestors, which cannot cover what is inside them (a component's host is one); and
+     anything see-through (fully transparent, or with no background and nothing of its own to show), such as a link stretched over a card to
+     make all of it clickable. Never reached at all means clipped away.
+     Not asked: the page itself, which is under everything; a spot off the screen, where nothing can be asked; and an
+     element that takes no clicks (pointer-events: none), which the question passes through even where it is plainly in
+     sight. The answer is kept for a quarter of a second, wherever the pin moves meanwhile: asking is the costly part,
+     and an element scrolled along with its pin is rarely covered by the scroll. */
   const coverMemo = new WeakMap();
   const isOursEl = n => n.localName === OPTS.tagName || n.localName === OPTS.tagName + '-editor';
+  const SOLID = new Set(['IMG', 'VIDEO', 'CANVAS', 'IFRAME', 'SVG', 'OBJECT', 'EMBED', 'INPUT', 'TEXTAREA', 'SELECT', 'PICTURE']);
+  const seeThrough = n => {
+    if (SOLID.has(n.tagName.toUpperCase())) return false;
+    const cs = getComputedStyle(n), bg = cs.backgroundColor;
+    return +cs.opacity === 0 || (bg === 'transparent' || /^rgba\(.*,\s*0\)$/.test(bg)) && cs.backgroundImage === 'none';
+  };
   const isCovered = (key, elm, cx, cy, b) => {
     if (elm === document.body || elm === document.documentElement || typeof document.elementsFromPoint !== 'function') return false;
     const x = Math.min(Math.max(cx, b.left + 1), b.right - 1), y = Math.min(Math.max(cy, b.top + 1), b.bottom - 1);
     if (!(x >= 0 && y >= 0 && x < innerWidth && y < innerHeight)) return false;
     const memo = coverMemo.get(key), now = clock();
-    if (memo && memo.elm === elm && now - memo.at < 250 && Math.abs(memo.x - x) < 2 && Math.abs(memo.y - y) < 2) return memo.no;
+    if (memo && memo.elm === elm && now - memo.at < 250) return memo.no;
     let no = false;
     if (getComputedStyle(elm).pointerEvents !== 'none') {
-      const top = document.elementsFromPoint(x, y).find(n => !isOursEl(n));
-      no = !!top && top !== elm && !elm.contains(top);
+      const stack = document.elementsFromPoint(x, y);
+      no = stack.length > 0;
+      for (const n of stack) {
+        if (isOursEl(n)) continue;
+        if (n === elm || elm.contains(n)) { no = false; break; }
+        if (n.contains(elm) || seeThrough(n)) continue;
+        break;
+      }
     }
-    coverMemo.set(key, { elm, x, y, at: now, no });
+    coverMemo.set(key, { elm, at: now, no });
     return no;
   };
   const quoteOf = th => th.anchor && th.anchor.sel && th.anchor.sel.text ? String(th.anchor.sel.text).trim().split(/\s+/).join(' ') : '';
@@ -1409,7 +1426,7 @@ aside.fail .listing{display:none}
     hold(id);
     try {
       if (depot.addReply) await depot.addReply(id, entry); else await depot.update(id, { replies: th.replies, updated: clock() });
-      th.updated = clock(); logSeen(id);
+      th.updated = clock(); logSeen(id); saveName();
       ping('replied', { id }); announce('Reply added');
     } catch (_) {
       th.replies.splice(th.replies.indexOf(entry), 1);
@@ -1782,7 +1799,7 @@ aside.fail .listing{display:none}
         warn('A note could not be saved.'); return;
       }
       if (!lookup(entry2.id)) W.threads.push(entry2);   // a sync may already have brought it back from a shared store
-      wrote.set(entry2.id, clock());
+      wrote.set(entry2.id, clock()); saveName();
       logSeen(entry2.id);
       /* another spot was clicked while this note was saving: that draft and its box are the reader's present business,
          so this note just takes its place on the page */
@@ -2132,7 +2149,10 @@ aside.fail .listing{display:none}
       name.textContent = v; face.replaceChildren(badge({ authorName: v, authorId: me.id }));
       edit.setAttribute('aria-label', label()); edit.title = label();
       const carried = namesFollow();
-      if (carried) { stampMine(); saveName(); refreshPins(); scheduleList(); }
+      if (carried) {
+        stampMine(); refreshPins(); scheduleList();
+        saveName().then(ok => { if (!ok) announce('Your name could not be saved for everyone just now. It will be tried again next time.'); });
+      }
       announce('You are now ' + v + (carried ? '. Your notes show it too.' : '. Notes you have already left keep the name they were written under.'));
       if (W.openId && threadBox) drawThread();
       box.rest();
@@ -2415,10 +2435,13 @@ aside.fail .listing{display:none}
       for (const r of th.replies || []) if (r && r.authorId === me.id) r.authorName = me.name;
     }
   };
-  /* a made-up name is not saved for everyone: it is only ever this browser's, and the notes already carry it */
-  const saveName = () => {
-    if (!SHARED || READ_ONLY || typeof depot.setName !== 'function' || me.alias || me.id === 'anon' || !me.name || me.name === OPTS.anonymousName) return;
-    try { Promise.resolve(depot.setName(me.name)).catch(() => {}); } catch (_) { /* the notes keep the names they carry */ }
+  /* Saved for everyone only once there is something of theirs to put it on: a visitor who only reads leaves no name
+     behind, so the store does not become a list of everyone who came. A made-up name is never saved: it is only ever
+     this browser's, and the notes already carry it. Resolves to false when it could not be saved. */
+  const hasWritten = () => me.id !== 'anon' && W.threads.some(th => th.authorId === me.id || (th.replies || []).some(r => r && r.authorId === me.id));
+  const saveName = async () => {
+    if (!SHARED || READ_ONLY || typeof depot.setName !== 'function' || me.alias || me.id === 'anon' || !me.name || me.name === OPTS.anonymousName || !hasWritten()) return true;
+    try { await depot.setName(me.name); return true; } catch (_) { return false; }
   };
   const loadAll = async () => {
     W.loading = true; W.loadFailed = false; scheduleList();

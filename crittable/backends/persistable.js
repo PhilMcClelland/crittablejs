@@ -42,20 +42,27 @@
     /* Names, by the store's `owner`: the one thing about an object its writer cannot choose. A person object only ever
        names whoever created it, so nobody can rename someone else; a note's own copy of the name is kept, and shown
        when its writer has no person object (a note from before 0.3.0, say). Two objects for one person (two tabs made
-       one each at once) is not an error: the newer says. `mine` is this browser's id once the store has said it, and
-       `pending` a name it is saving just now, shown at once so a reload in between does not put the old one back. */
-    var named = Object.create(null), mine = null, pending = null;
-    function learn(rows) {
-      var seen = Object.create(null);
+       one each at once) is not an error: the one made last says, by `created`, which the store sets once and nobody can
+       change (`updated` would not do: anyone may touch an object's open part, and that makes it newer). The owner's own
+       next save removes the others.
+       `mine` is this browser's id once the store has said it; `pending` a name it is saving just now, shown at once;
+       `wroteAt` when it last saved one, so a load that began before then does not put the old name back; `known` says
+       a list of names has come in at least once, without which a save could not tell whether to change or make. */
+    var named = Object.create(null), spare = [], mine = null, pending = null, wroteAt = 0, known = false, queue = Promise.resolve();
+    function learn(rows, began) {
+      var seen = Object.create(null), extra = [];
       rows.forEach(function (o) {
         try {
-          var n = nameOf(o.data.name), was = seen[o.owner];
-          if (!n || typeof o.owner !== 'string' || typeof o.id !== 'string') return;
-          var at = Number(o.updated) || 0;
-          if (!was || at > was.at || (at === was.at && o.id > was.id)) seen[o.owner] = { id: o.id, name: n, at: at };
+          if (!o || o.parent || typeof o.owner !== 'string' || typeof o.id !== 'string') return;
+          var n = nameOf(o.data.name);
+          if (!n) return;
+          var at = Number(o.created) || 0, was = seen[o.owner];
+          if (!was || at > was.at || (at === was.at && o.id > was.id)) { if (was && o.owner === mine) extra.push(was.id); seen[o.owner] = { id: o.id, name: n, at: at }; }
+          else if (o.owner === mine) extra.push(o.id);
         } catch (_) { /* not a person: left out */ }
       });
-      named = seen;
+      if (mine && began < wroteAt && named[mine]) seen[mine] = named[mine];
+      named = seen; spare = extra; known = true;
     }
     function person(o) {
       var p = { authorId: o.owner, authorName: o.data.authorName }, n = pending !== null && o.owner === mine ? pending : named[o.owner] && named[o.owner].name;
@@ -127,27 +134,36 @@
       },
       /* names are asked for beside the notes; a store that cannot say them still shows the notes, under the names they carry */
       load: function () {
+        var began = Date.now();
         return Promise.all([notes.list(), people.list().then(null, function () { return null; })]).then(function (got) {
-          if (Array.isArray(got[1])) learn(got[1]);
+          if (Array.isArray(got[1])) learn(got[1], began);
           return threads(Array.isArray(got[0]) ? got[0] : []);
         });
       },
       /* this person's name, on everything they have written: their one person object changed, or made if they have none.
          Nothing is sent when the store already has it. Call it after a load, which is how the adapter knows what is there. */
+      /* this person's name, on everything they have written: their person object changed, or made if they have none.
+         Nothing is sent when the store already has it. Saves go one at a time, so two in quick succession cannot both
+         make an object, nor land out of order. It refuses before the first list of names has come in. */
       setName: function (name) {
         var n = nameOf(name);
         if (!n) return Promise.resolve();
-        return whoAmI().then(function () {
+        var run = queue.then(whoAmI).then(function () {
           if (!mine) return;
+          if (!known) throw new Error('crittable persistable: the names are not loaded yet');
           var had = named[mine];
-          if (had && had.name === n && pending === null) return;
+          if (had && had.name === n) return;
           pending = n;
-          var done = function (o) {
+          return (had ? people.update(had.id, { v: 1, name: n }) : people.create({ v: 1, name: n })).then(function (o) {
+            wroteAt = Date.now();
+            named[mine] = { id: had ? had.id : o && o.id, name: n, at: had ? had.at : Number(o && o.created) || wroteAt };
             if (pending === n) pending = null;
-            if (o && typeof o.id === 'string') named[mine] = { id: o.id, name: n, at: Number(o.updated) || Date.now() };
-          };
-          return (had ? people.update(had.id, { v: 1, name: n }) : people.create({ v: 1, name: n })).then(done, function (e) { if (pending === n) pending = null; throw e; });
+            var extra = spare; spare = [];
+            return Promise.all(extra.map(function (id) { return people.remove(id).then(null, function () {}); }));
+          }, function (e) { if (pending === n) pending = null; throw e; });
         });
+        queue = run.then(null, function () {});
+        return run;
       },
       create: function (th) { return notes.create(Object.assign(who(th), { route: th.route, created: th.created, anchor: th.anchor }),   /* the author's own copy of the place, which only they can change */ { id: th.id, open: { anchor: th.anchor, resolved: false, updated: th.updated } }); },
       update: function (id, patch) { return notes.patch(id, split(patch)); },

@@ -79,12 +79,38 @@ await step('nobody can rename someone else: a name only ever names whoever store
   const [th] = await ben.load(); await raw.remove(made.id);
   if (th.authorName !== 'Ada Lovelace') throw new Error('a stranger renamed the note to ' + JSON.stringify(th.authorName));
 });
-await step('two names for one person: the newer one is shown', async () => {
+await step('a second rename changes the one name object, and makes no other', async () => {
   const raw = ctx.Persistable(opts()).collection('crittable-people'), before = (await raw.list()).length;
-  await new Promise(r => setTimeout(r, 5));   // so the second is newer by the store's clock
-  const tab = ctx.CrittablePersistable(opts({ storage: adaKeeps })); await tab.setName('Ada L.');   // a second tab of Ada's that has not loaded makes a second object
-  const [th] = await ben.load(); const n = (await raw.list()).length;
-  if (n !== before + 1 || th.authorName !== 'Ada L.') throw new Error('expected a second object and the newer name; got ' + n + ' and ' + JSON.stringify(th.authorName));
+  await ada.setName('Ada King'); const [th] = await ben.load(), after = (await raw.list()).length;
+  if (after !== before || th.authorName !== 'Ada King') throw new Error('expected ' + before + ' objects and "Ada King"; got ' + after + ' and ' + JSON.stringify(th.authorName));
+  await ada.setName('Ada Lovelace');
+});
+await step('a name is not saved before the names have been read', async () => {
+  let why = null; try { await ctx.CrittablePersistable(opts({ storage: adaKeeps })).setName('Too Soon'); } catch (e) { why = e; }
+  if (!why) throw new Error('a browser that had not read the names saved one anyway, and could have made a second object');
+});
+await step('two names for one person: the one made last is shown, a stranger cannot change which, and the next save tidies up', async () => {
+  const mine = ctx.Persistable(opts({ storage: adaKeeps })).collection('crittable-people'), any = ctx.Persistable(opts()).collection('crittable-people');
+  const adaId = (await ada.whoami()).id, older = (await mine.list()).find(o => o.owner === adaId);
+  await new Promise(r => setTimeout(r, 5));
+  await mine.create({ v: 1, name: 'Ada L.' });   // as a second tab would, had it not read the names first
+  let [th] = await ben.load(); if (th.authorName !== 'Ada L.') throw new Error('the newer object did not win: ' + JSON.stringify(th.authorName));
+  try { await any.setOpen(older.id, { touched: true }); } catch (_) { /* a store that refuses it is fine too */ }
+  [th] = await ben.load(); if (th.authorName !== 'Ada L.') throw new Error('a stranger touching the older object brought its name back: ' + JSON.stringify(th.authorName));
+  await ada.load(); await ada.setName('Ada Lovelace');
+  const left = (await any.list()).filter(o => o.owner === older.owner);
+  [th] = await ben.load();
+  if (left.length !== 1 || th.authorName !== 'Ada Lovelace') throw new Error('expected one object and "Ada Lovelace"; got ' + left.length + ' and ' + JSON.stringify(th.authorName));
+});
+await step('name objects that are not names cannot break loading, nor name anyone', async () => {
+  const raw = ctx.Persistable(Object.assign(opts(), { storage: memory() })).collection('crittable-people'), made = [];
+  for (const [data, more] of [[{ name: 5 }], [{}], [{ name: '   ' }], [{ name: ['Ada'] }], [{ name: 'Child' }, { parent: 'v-note' }], [{ name: 'Proto' }, { id: 'constructor' }], [{ name: 'Proto2' }, { id: '__proto__' }]]) {
+    try { made.push((await raw.create(data, more)).id); } catch (_) { /* refused by the store: nothing to survive */ }
+  }
+  let got, why = null; try { got = await ben.load(); } catch (e) { why = e; }
+  for (const id of made) { try { await raw.remove(id); } catch (_) { /* gone */ } }
+  if (why) throw new Error('loading broke: ' + why.message);
+  if (!got.length || got[0].authorName !== 'Ada Lovelace') throw new Error('unexpected: ' + JSON.stringify(got[0] && got[0].authorName));
 });
 await step('each person can take their name away again', async () => {
   for (const keeps of [adaKeeps, benKeeps]) { const raw = ctx.Persistable(opts({ storage: keeps })).collection('crittable-people'), me = await ctx.Persistable(opts({ storage: keeps })).me(); for (const o of await raw.list()) if (o.owner === me.id) await raw.remove(o.id); }

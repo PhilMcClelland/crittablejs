@@ -74,6 +74,12 @@ All optional, all on the tool's own `<script>` tag.
 | `data-space` | Which set of notes. The page's origin unless set. |
 | `data-poll` | Milliseconds between asks: on Supabase always, on the Worker only while its live connection is down. 4000 unless set. |
 
+## Pages that swap scenes
+
+A pin is drawn only while its element can be seen. It is hidden when the element, or anything around it, is `display: none`, `visibility: hidden`, `opacity: 0`, or clipped away entirely by a `clip-path` (an `inset()` that meets itself, or a shape with no area), and when something else covers it at the pin's spot.
+
+A page that stacks scenes in one place and swaps them should make a scene that is not showing one of those: `opacity: 0` or `visibility: hidden` is the surest, and a full `clip-path` works too. Being covered is found by asking the browser what a click at the pin's spot would reach, so it cannot see an element with `pointer-events: none`; give such a scene one of the styles above when it is not showing, and its pins hide with it.
+
 ## Who is commenting
 
 Set `window.CRITTABLE_USER = { id, name, avatar }` before the script tag. With a shared store that signs people in or gives each browser an identity (both shipped adapters do), the person's `id` comes from the store and replaces `CRITTABLE_USER.id`: the store decides who may edit a note, so its id is the one that counts. With the two shipped adapters the name and avatar stay yours. The one exception is `data-token-url`: when the site's token names the visitor and the page has not, that name is used, and the panel offers no field to change it. `avatar` is optional: an image URL the host page supplies (`https:`, `data:image/` or a relative path). Pins and threads show it in place of initials, and fall back to initials if it fails to load. On a shared store only your own image shows by default, because another person's image address is theirs to choose and loading it tells that address who is looking; set `sharedAvatars: true` only when the page itself supplies everyone's image, because with it on every reader's browser fetches whatever address each writer stored, including an address on your own site. The tool does not look avatars up anywhere itself unless you turn Gravatar on.

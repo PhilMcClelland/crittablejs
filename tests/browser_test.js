@@ -128,6 +128,13 @@ const seeded = fail => `(() => { const rows = [
       await page.evaluate(() => { document.getElementById('scene-over').style.clipPath = 'inset(0 0 100% 0)'; }); await page.waitForTimeout(600);
       s = await shown();
       assert.deepStrictEqual([s['1'], s['2'], s['3']], ['visible', 'hidden', 'visible'], 'clipping the top scene away swaps which pin shows: ' + JSON.stringify(s));
+      /* scenes swapped out by clip-path often take no clicks either, which the hit test cannot see: the clip itself is read */
+      await page.evaluate(() => { for (const id of ['scene-under', 'scene-over']) document.getElementById(id).style.pointerEvents = 'none'; }); await page.waitForTimeout(1300);
+      s = await shown();
+      assert.strictEqual(s['2'], 'hidden', 'a scene clipped away is hidden even when it takes no clicks: ' + JSON.stringify(s));
+      await page.evaluate(() => { const o = document.getElementById('scene-over'); o.style.clipPath = 'none'; document.getElementById('scene-under').style.clipPath = 'polygon(0 0, 0 0, 0 0)'; }); await page.waitForTimeout(1300);
+      s = await shown();
+      assert.deepStrictEqual([s['1'], s['2']], ['hidden', 'visible'], 'a shape with no area hides its scene too: ' + JSON.stringify(s));
     });
     await scene('the wash on a target: ours, soft, and absent on a target that fills the view', {}, null, async ({ page, q, key }) => {
       const wash = async () => (await q('.wash', '(r => [el.classList.contains("on"), Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)])(el.getBoundingClientRect())'))[0];

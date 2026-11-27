@@ -1,4 +1,4 @@
-/*! Crittable.js 0.3.1 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
+/*! Crittable.js 0.3.2 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
 // Crittable.js: attach notes to spots on a page.
 (() => {
   'use strict';
@@ -10,7 +10,7 @@
   const keyIs = (evt, name) => String(evt.key).toLowerCase() === String(KEYS[name]).toLowerCase();
   const isBack = evt => keyIs(evt, 'back');
   const keyCap = name => /^esc(ape)?$/i.test(KEYS[name]) ? 'Esc' : String(KEYS[name]).toUpperCase();
-  const VERSION = '0.3.1';   // also in the first line of this file and in CHANGELOG.md
+  const VERSION = '0.3.2';   // also in the first line of this file and in CHANGELOG.md
   const GUARD = '__' + OPTS.tagName;
   /* the product name, with a file extension (".js") split off so the lockup can set it quietly */
   const NAME = /^(.+?)(\.[a-z]{1,4})?$/i.exec(String(OPTS.productName)) || [0, String(OPTS.productName), ''];
@@ -905,6 +905,38 @@ aside.fail .listing{display:none}
   const sheetMode = () => !!window.matchMedia && window.matchMedia('(max-width:520px)').matches === true;
 
   /* ---------- visibility and element resolution ---------- */
+  /* A clip-path that leaves nothing of an element (an inset() that meets itself, a shape with no area) hides it as surely
+     as display: none, on it or on any element around it. Pages that swap scenes by clip-path often also turn their
+     clicks off (pointer-events: none), which the covered check below cannot see past, so it is looked for here. A clip
+     this cannot read (calc(), a url(), a path) counts as showing: a pin wrongly drawn is less bad than one wrongly lost. */
+  const lengthOf = (v, whole) => { const m = /^(-?[\d.]+)(px|%)?$/.exec(v); return !m ? NaN : m[2] === '%' ? +m[1] / 100 * whole : +m[1]; };
+  const clipLeavesNothing = (clip, w, h) => {
+    const m = /^(inset|polygon|circle|ellipse)\((.*)\)$/.exec(clip || '');
+    if (!m) return false;
+    const args = m[2].trim();
+    if (m[1] === 'inset') {
+      const v = args.split(/\s+round\s+/)[0].trim().split(/\s+/);
+      const [t, r = t, b = t, l = r] = v, n = [lengthOf(t, h), lengthOf(r, w), lengthOf(b, h), lengthOf(l, w)];
+      return v.length <= 4 && n.every(Number.isFinite) && (n[0] + n[2] >= h || n[1] + n[3] >= w);
+    }
+    if (m[1] === 'polygon') {
+      const pts = args.replace(/^(nonzero|evenodd)\s*,/, '').split(',').map(pt => pt.trim().split(/\s+/));
+      const xy = pts.map(([x, y]) => [lengthOf(x, w), lengthOf(y, h)]);
+      if (!xy.length || xy.some(([x, y]) => !Number.isFinite(x) || !Number.isFinite(y))) return false;
+      let area = 0; xy.forEach(([x, y], i) => { const [x2, y2] = xy[(i + 1) % xy.length]; area += x * y2 - x2 * y; });
+      return Math.abs(area) < 0.5;
+    }
+    const radii = args.split(/\s+at\s+/)[0].trim().split(/\s+/).filter(Boolean);
+    const whole = m[1] === 'circle' ? Math.hypot(w, h) / Math.SQRT2 : null;
+    return radii.length > 0 && radii.some((r, i) => lengthOf(r, whole === null ? (i ? h : w) : whole) === 0);
+  };
+  const clippedAway = elm => {
+    for (let n = elm; n && n !== document.documentElement; n = n.parentElement) {
+      const clip = getComputedStyle(n).clipPath;
+      if (clip && clip !== 'none') { const b = n.getBoundingClientRect(); if (clipLeavesNothing(clip, b.width, b.height)) return true; }
+    }
+    return false;
+  };
   const isShown = elm => {
     const memo = seenMemo.get(elm);
     if (memo && clock() - memo.at < 1000) return memo.ok;
@@ -912,6 +944,7 @@ aside.fail .listing{display:none}
     if (elm.checkVisibility) ok = elm.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
     else { const cs = getComputedStyle(elm); ok = cs.display !== 'none' && cs.visibility !== 'hidden' && +cs.opacity > 0; }
     if (ok) { const b = elm.getBoundingClientRect(); ok = b.width > 0 && b.height > 0; }
+    if (ok) ok = !clippedAway(elm);
     seenMemo.set(elm, { at: clock(), ok });
     return ok;
   };

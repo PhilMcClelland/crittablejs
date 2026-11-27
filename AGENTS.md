@@ -6,7 +6,7 @@ The repository is https://github.com/PhilMcClelland/crittablejs. The `crittable/
 
 ## Add it to a prototype
 
-1. Add one tag to each page: `<script src="https://cdn.jsdelivr.net/gh/PhilMcClelland/crittablejs@v0.3.1/crittable/crittable.js"></script>`.
+1. Add one tag to each page: `<script src="https://cdn.jsdelivr.net/gh/PhilMcClelland/crittablejs@v0.3.2/crittable/crittable.js"></script>`.
 2. Or, if the person wants nothing loaded from another site, copy the `crittable/` folder into the prototype (any name, anywhere it is served) and use `<script src="path/to/crittable/crittable.js"></script>`. The rest of this file writes the tag that way; the hosted address works in its place everywhere.
 3. Open the page. A round button appears in a corner; `C` starts a note.
 

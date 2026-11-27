@@ -2,6 +2,10 @@
 
 A page runs the version its script tag names (the `@v…` in a hosted address), or the version of the folder that was copied. `data-version` on the tool's element says which.
 
+## 0.3.2
+
+- A pin on a scene clipped away entirely by `clip-path` (an `inset()` that meets itself, or a shape with no area) is hidden, on the element or anything around it, even when the scene takes no clicks (`pointer-events: none`), which the covered check in 0.3.0 could not see. `docs/reference.md`, "Pages that swap scenes", says how a page can make sure: give a scene that is not showing `opacity: 0` or `visibility: hidden`.
+
 ## 0.3.1
 
 - "Show launcher" shows or hides the launcher and nothing else. Before, hiding it also opened the panel and took away its close button; now the add key, and a button of the page's own, still open the panel. If the launcher is hidden and the keys are turned off on a page with no button of its own, the launcher shows anyway, so nobody is left without a way in.

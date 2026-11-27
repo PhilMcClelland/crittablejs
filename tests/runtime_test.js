@@ -57,7 +57,7 @@ class Element {
     let n = this; while (n.parentNode) n = n.parentNode;
     if (n instanceof Shadow) { n.activeElement = this; this.ownerDocument.activeElement = n.host; } else this.ownerDocument.activeElement = this;
   }
-  blur() {} setSelectionRange() {} scrollIntoView() {} setPointerCapture() {} releasePointerCapture() {} hasPointerCapture() { return false; }
+  blur() {} select() {} setSelectionRange() {} scrollIntoView() {} setPointerCapture() {} releasePointerCapture() {} hasPointerCapture() { return false; }
   querySelectorAll(sel) { return queryAll(this, sel); }
   querySelector(sel) { return queryAll(this, sel)[0] || null; }
 }
@@ -147,7 +147,7 @@ const tick = (ms = 0) => new Promise(r => setTimeout(r, ms));
 const settle = async () => { for (let i = 0; i < 5; i++) await tick(0); };
 
 /* A fresh page + fresh pinwall instance around a given backend. */
-async function boot(backend, opts) {
+async function boot(backend, opts, user = { id: 'me', name: 'Tester' }, kept = {}) {
   for (const h of document.body.children.slice()) h.remove();
   document.body.append(Object.assign(document.createElement('div'), {}));
   const target = document.createElement('div'); target.id = 'target'; target.append('Hello there');
@@ -155,9 +155,10 @@ async function boot(backend, opts) {
   document.body.append(target);
   delete globalThis['__pin-note-board'];
   Object.keys(mem).forEach(k => delete mem[k]);
+  for (const k in kept) mem['crittable.' + k] = JSON.stringify(kept[k]);   // what this browser kept from an earlier visit
   document.activeElement = document.body;
   globalThis.CRITTABLE_CONFIG = Object.assign({ backend }, opts);
-  globalThis.CRITTABLE_USER = { id: 'me', name: 'Tester' };
+  if (user) globalThis.CRITTABLE_USER = user; else delete globalThis.CRITTABLE_USER;
   vm.runInThisContext(SRC, { filename: 'pinwall.js' });
   await settle();
   const host = document.body.children.find(c => c.localName === 'pin-note-board');
@@ -317,6 +318,47 @@ const test = async (name, fn) => { await fn(); results.push(name); };
     act('Delete your reply').click(); await settle();
     root.querySelector('.thread .confirm .danger').click(); await settle();
     assert.deepStrictEqual(bodies(), ['theirs'], 'reply deleted'); assert.strictEqual(be.rows[0].replies.length, 1, 'delete stored');
+  });
+  /* ---------- names: who someone is now, on everything they wrote ---------- */
+  const byWhom = root => root.querySelectorAll('button.pin').map(p => / by (.*?),/.exec(p.getAttribute('aria-label'))[1]);
+  await test('names: on a board kept in this browser, notes written under an old name show the current one', async () => {
+    const seed = [{ id: 'n1', text: 'old', authorName: 'Old Me', authorId: 'me', created: 1, updated: 1, route: '/', resolved: false, anchor: { k: 'css', v: '#target', dx: 1, dy: 1 },
+      replies: [{ id: 'r1', text: 'mine', authorName: 'Old Me', authorId: 'me', at: 2 }, { id: 'r2', text: 'theirs', authorName: 'Other', authorId: 'u2', at: 3 }] },
+      { id: 'n2', text: 'not mine', authorName: 'Other', authorId: 'u2', created: 1, updated: 1, route: '/', resolved: false, replies: [], anchor: { k: 'css', v: '#target', dx: 2, dy: 2 } }];
+    const { root } = await boot(memoryBackend(seed));
+    assert.deepStrictEqual(byWhom(root), ['Tester', 'Other'], 'my note shows my name now; someone else\'s keeps theirs');
+    root.querySelector('button.pin').click(); await settle();
+    const who = root.querySelectorAll('.thread .msg.reply .who b').map(b => b.textContent);
+    assert.deepStrictEqual(who, ['Tester', 'Other'], 'and so do the replies');
+  });
+  await test('names: on a shared store, the name is saved for everyone and old notes follow a rename', async () => {
+    const said = [];
+    const seed = [{ id: 'n1', text: 'old', authorName: 'Inky Otter', authorId: 'me', created: 1, updated: 1, route: '/', resolved: false, replies: [], anchor: { k: 'css', v: '#target', dx: 1, dy: 1 } }];
+    const be = Object.assign(memoryBackend(seed), { shared: true, async whoami() { return { id: 'me' }; }, async setName(n) { said.push(n); } });
+    const { root } = await boot(be, {}, null, { whoName: 'Early Name' });   // a name chosen under 0.2.0, before names were kept for everyone
+    assert.deepStrictEqual(said, ['Early Name'], 'a name chosen before is saved for everyone at load, so notes already written follow it');
+    const foot = root.querySelector('footer.you');
+    assert(foot && !foot.hidden, 'the name row is there');
+    byLabel(root, 'Change your name').click();
+    const field = foot.querySelector('.namefield'); field.value = 'New Name';
+    dispatch(field, key('Enter')); await settle();
+    assert.strictEqual(said[said.length - 1], 'New Name', 'a rename is saved for everyone: ' + JSON.stringify(said));
+    assert.deepStrictEqual(byWhom(root), ['New Name'], 'my old note shows the new name at once');
+  });
+  await test('names: a made-up name is not saved for everyone, and a read-only visitor saves nothing', async () => {
+    const said = [];
+    const be = Object.assign(memoryBackend(SEED), { shared: true, async whoami() { return { id: 'me' }; }, async setName(n) { said.push(n); } });
+    await boot(be, {}, null);
+    assert.deepStrictEqual(said, [], 'nothing saved under a made-up name');
+    const ro = Object.assign(memoryBackend(SEED), { shared: true, readOnly: true, async whoami() { return { id: 'me' }; }, async setName(n) { said.push(n); } });
+    await boot(ro, {}, { id: 'me', name: 'Reader' });
+    assert.deepStrictEqual(said, [], 'nothing saved by a reader');
+  });
+  await test('names: a name the page gives reaches the store at load', async () => {
+    const said = [];
+    const be = Object.assign(memoryBackend(SEED), { shared: true, async whoami() { return { id: 'me' }; }, async setName(n) { said.push(n); } });
+    await boot(be, {}, { id: 'me', name: 'Site Name' });
+    assert.deepStrictEqual(said, ['Site Name']);
   });
   /* ---------- 3. Esc ladder ---------- */
   await test('esc: one level at a time: menu, draft, thread, placing', async () => {

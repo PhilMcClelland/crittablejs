@@ -221,7 +221,7 @@ None yet.
 - **Options**: (a) as it was: a name field in the note box the first time someone writes, and no note without it; (b) everyone starts under a made-up name, and the panel offers to use their own
 - **Recommendation**: (b)
 - **Decided**: 2026-11-23. This replaces the 2026-11-18 rule that a name is asked for at the first note.
-- **Why**: the first note is the moment that matters, and a form in front of it is the wrong thing to meet. A made-up name (a word from the desk and a small animal, picked by the browser's id, our own lists) lets someone write at once and still be told apart. The foot of the panel reads "Critting as …" with a pencil; naming happens there, in place. The wording is "Critting as"; "Commenting as" would be the only place the interface says "comment", against the 2026-11-17 word rule. Known limit: notes already left keep the made-up name, because a store only lets an author change a note's words.
+- **Why**: the first note is the moment that matters, and a form in front of it is the wrong thing to meet. A made-up name (a word from the desk and a small animal, picked by the browser's id, our own lists) lets someone write at once and still be told apart. The foot of the panel reads "Critting as …" with a pencil; naming happens there, in place. The wording is "Critting as"; "Commenting as" would be the only place the interface says "comment", against the 2026-11-17 word rule. Known limit: notes already left keep the made-up name, because a store only lets an author change a note's words. (Lifted on 2026-11-27: see "Does a note keep the name it was written under?")
 
 ## What does the system say about motion, now that the mark moves?
 - **Asked**: 2026-11-23
@@ -292,7 +292,7 @@ None yet.
 - **Options**: (a) an option, off by default, that gives such a board the naming a shared one has; (b) naming everywhere, with no option
 - **Recommendation**: (a) was built first; (b) is simpler
 - **Decided**: 2026-11-24 → (b)
-- **Why**: one way of being someone, whatever the store. Where notes stay in one browser the name matters less, and costs nothing; an option would be one more thing to explain for a difference nobody needs. `CRITTABLE_USER`, when given, still wins and there is no footer. Notes written before the browser had an id stay its own to edit and keep the name they were written under.
+- **Why**: one way of being someone, whatever the store. Where notes stay in one browser the name matters less, and costs nothing; an option would be one more thing to explain for a difference nobody needs. `CRITTABLE_USER`, when given, still wins and there is no footer. Notes written before the browser had an id stay its own to edit and keep the name they were written under. (Since 2026-11-27 they show the current name: see "Does a note keep the name it was written under?")
 
 ## Is Persistable.js a store, or the interface to stores?
 - **Asked**: 2026-11-25
@@ -329,3 +329,13 @@ None yet.
 - **Carried out in**: Persistable.js 0.2.0 (`token` option, `TOKEN_SECRET`, `token.mjs`); here `data-token-url` in `crittable/crittable.js` and `crittable/backends/persistable.js`. The tool itself (`crittable/pinwall.js`) did not change.
 - **Two choices inside it**: a visitor the site names is not offered a name field, by setting the name the way a page sets `CRITTABLE_USER`, which is an existing state; a visitor the site turns away (401 or 403) gets the tool with notes kept in their browser and nothing in the console, because being turned away is the site's answer and not a fault.
 - **Left to the maintainer**: whether a visitor the site names should be able to change that name.
+
+## Does a note keep the name it was written under?
+- **Asked**: 2026-11-27, by the maintainer, after renaming himself on a shared prototype and finding his earlier notes still under the old name
+- **Options**: (a) as it was: each note and reply carries a copy of its writer's name from when it was written; (b) a name is who someone is now: each person keeps one name, and every note and reply of theirs shows it, with the copy kept for when there is none
+- **Recommendation**: (b)
+- **Decided**: 2026-11-27 → (b). It reverses the copying recorded under "How does a shared prototype learn someone's name?" and "Can a reader name themselves on a board that is not shared?"
+- **Why**: someone who changes their name means "call me this", not "this name from now on". Under (a) one person shows under two or three names on one page, and a reader cannot tell they are the same person; the made-up name most people start under makes that the usual case, not a rare one.
+- **How**: on Persistable.js each person's name is one object in a second collection, `crittable-people`, and names are matched to notes by the store's `owner`, which a visitor cannot forge, never by anything a note or name object says about itself, so nobody can make a name object that renames someone else. Two objects for one person (two tabs at once) is not an error: the newer one is shown. The copy on each note stays and is shown when its writer has no name object, which keeps every note written before this change, and every store without `setName`, as it was. A made-up name is not saved for everyone. On a board kept in one browser there is one person, and their notes show their current name.
+- **Carried out in**: `setName` in the adapter contract (`spec/STORAGE.md`) and `crittable/backends/persistable.js`; `namesFollow`, `stampMine` and `saveName` in `crittable/pinwall.js`. Persistable.js did not change.
+- **Accepted**: a face's colour and letters come from the name, so a rename recolours the person's earlier faces too. In a space where everyone is trusted (`data-key="link"`), anyone in it could change someone's name object, as they can already change the words of anyone's note there.

@@ -24,7 +24,10 @@
             the backend up itself: then use CrittablePersistable(opt).ready(), which resolves to the backend. */
 (function (root) {
   'use strict';
-  /* notes and replies are objects in one collection; a reply's parent is its note */
+  /* notes and replies are objects in one collection; a reply's parent is its note. Each person's name is one object
+     in a second collection, so a name changed once shows on everything they have written */
+  var PEOPLE = 'crittable-people';
+  var nameOf = function (v) { return typeof v === 'string' ? v.trim().slice(0, 80) : ''; };
   /* a place says how to find its element: a kind and a value, both words. Anything less is not a place */
   var isPlace = function (a) { return !!a && typeof a === 'object' && !Array.isArray(a) && typeof a.k === 'string' && typeof a.v === 'string' && !!a.k && !!a.v; };
   function backend(opt) {
@@ -33,10 +36,34 @@
     if (opt.tokenUrl != null && !opt.token) { if (!String(opt.tokenUrl).trim()) throw new Error('crittable persistable: data-token-url is empty'); opt = Object.assign({}, opt, { token: tokenFrom(String(opt.tokenUrl).trim()) }); }
     /* the loader hands over every attribute, set or not: with a token, the ones it replaces must be absent, not empty */
     if (opt.token) { opt = Object.assign({}, opt); ['key', 'read', 'space'].forEach(function (k) { if (opt[k] == null || opt[k] === '') delete opt[k]; }); }
-    var db = root.Persistable(opt), notes = db.collection('crittable');
+    var db = root.Persistable(opt), notes = db.collection('crittable'), people = db.collection(PEOPLE);
     /* an older client would not know the option, and would quietly use the open space named after the page */
     if (opt.token && typeof db.ready !== 'function') throw new Error('crittable persistable: this copy of the Persistable.js client is too old for tokens');
-    function person(o) { var p = { authorId: o.owner, authorName: o.data.authorName }; if (o.data.authorAvatar) p.authorAvatar = o.data.authorAvatar; return p; }
+    /* Names, by the store's `owner`: the one thing about an object its writer cannot choose. A person object only ever
+       names whoever created it, so nobody can rename someone else; a note's own copy of the name is kept, and shown
+       when its writer has no person object (a note from before 0.3.0, say). Two objects for one person (two tabs made
+       one each at once) is not an error: the newer says. `mine` is this browser's id once the store has said it, and
+       `pending` a name it is saving just now, shown at once so a reload in between does not put the old one back. */
+    var named = Object.create(null), mine = null, pending = null;
+    function learn(rows) {
+      var seen = Object.create(null);
+      rows.forEach(function (o) {
+        try {
+          var n = nameOf(o.data.name), was = seen[o.owner];
+          if (!n || typeof o.owner !== 'string' || typeof o.id !== 'string') return;
+          var at = Number(o.updated) || 0;
+          if (!was || at > was.at || (at === was.at && o.id > was.id)) seen[o.owner] = { id: o.id, name: n, at: at };
+        } catch (_) { /* not a person: left out */ }
+      });
+      named = seen;
+    }
+    function person(o) {
+      var p = { authorId: o.owner, authorName: o.data.authorName }, n = pending !== null && o.owner === mine ? pending : named[o.owner] && named[o.owner].name;
+      if (n) p.authorName = n;
+      if (o.data.authorAvatar) p.authorAvatar = o.data.authorAvatar;
+      return p;
+    }
+    var whoAmI = function () { return mine ? Promise.resolve({ id: mine }) : db.me().then(function (me) { if (me && typeof me.id === 'string') mine = me.id; return me; }); };
     function threads(rows) {
       /* Rows are whatever other people stored, so nothing about them is taken on trust. byId has no prototype: an id such as
          "constructor" finds only what was put there. A reply is attached only to a note (one whose parent is a reply, or is
@@ -87,7 +114,7 @@
       /* who the store says this is. The id is the store's. A name comes only with a token, and is passed on only when it
          is the name the page already has for the visitor (set below from the token, or by the page itself): otherwise
          it would replace, at every load, a name the visitor chose or the page gave */
-      whoami: function () { return db.me().then(function (me) { if (me && 'name' in me && !(root.CRITTABLE_USER && root.CRITTABLE_USER.name === me.name)) { me = Object.assign({}, me); delete me.name; } return me; }); },
+      whoami: function () { return db.me().then(function (me) { if (me && typeof me.id === 'string') mine = me.id; if (me && 'name' in me && !(root.CRITTABLE_USER && root.CRITTABLE_USER.name === me.name)) { me = Object.assign({}, me); delete me.name; } return me; }); },
       /* is the store answering? Passed straight on from the client, when the client is new enough to say */
       status: function (fn) { return typeof db.onStatus === 'function' ? db.onStatus(fn) : function () {}; },
       /* with a key, the address to send people so they reach these notes; null without one */
@@ -95,10 +122,33 @@
       /* the client says when something changed (pushed by the Worker; asked for, every `poll` ms, on a store that cannot push); while its line is down, ask every `poll` ms instead */
       watch: function (onChange) {
         var up = false, ask = setInterval(function () { if (!up) onChange(); }, Number(opt.poll) || 4000);
-        var stop = db.watch(function (name) { if (name === null || name === 'crittable') onChange(); }, function (state) { up = state; });
+        var stop = db.watch(function (name) { if (name === null || name === 'crittable' || name === PEOPLE) onChange(); }, function (state) { up = state; });
         return function () { clearInterval(ask); stop(); };
       },
-      load: function () { return notes.list().then(function (rows) { return threads(Array.isArray(rows) ? rows : []); }); },
+      /* names are asked for beside the notes; a store that cannot say them still shows the notes, under the names they carry */
+      load: function () {
+        return Promise.all([notes.list(), people.list().then(null, function () { return null; })]).then(function (got) {
+          if (Array.isArray(got[1])) learn(got[1]);
+          return threads(Array.isArray(got[0]) ? got[0] : []);
+        });
+      },
+      /* this person's name, on everything they have written: their one person object changed, or made if they have none.
+         Nothing is sent when the store already has it. Call it after a load, which is how the adapter knows what is there. */
+      setName: function (name) {
+        var n = nameOf(name);
+        if (!n) return Promise.resolve();
+        return whoAmI().then(function () {
+          if (!mine) return;
+          var had = named[mine];
+          if (had && had.name === n && pending === null) return;
+          pending = n;
+          var done = function (o) {
+            if (pending === n) pending = null;
+            if (o && typeof o.id === 'string') named[mine] = { id: o.id, name: n, at: Number(o.updated) || Date.now() };
+          };
+          return (had ? people.update(had.id, { v: 1, name: n }) : people.create({ v: 1, name: n })).then(done, function (e) { if (pending === n) pending = null; throw e; });
+        });
+      },
       create: function (th) { return notes.create(Object.assign(who(th), { route: th.route, created: th.created, anchor: th.anchor }),   /* the author's own copy of the place, which only they can change */ { id: th.id, open: { anchor: th.anchor, resolved: false, updated: th.updated } }); },
       update: function (id, patch) { return notes.patch(id, split(patch)); },
       remove: function (id) { return notes.remove(id); },

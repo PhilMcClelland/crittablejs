@@ -20,7 +20,7 @@ vm.runInNewContext(read('vendor', 'persistable.js'), ctx); if (!worker) vm.runIn
 const memory = () => { const m = {}; return { getItem: k => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); } }; };
 const space = 'persistable-verify-' + Date.now().toString(36);
 const opts = more => Object.assign({ url, space, storage: memory(), fetch }, worker ? {} : { store, apiKey }, more);
-const ada = ctx.CrittablePersistable(opts()), ben = ctx.CrittablePersistable(opts());
+const adaKeeps = memory(), ada = ctx.CrittablePersistable(opts({ storage: adaKeeps })), benKeeps = memory(), ben = ctx.CrittablePersistable(opts({ storage: benKeeps }));
 let failed = 0;
 const step = async (name, fn) => { try { await fn(); console.log('  ok   ' + name); } catch (e) { failed++; console.log('  FAIL ' + name + '\n       ' + (e && e.message)); } };
 // a refusal only counts if the store said no; failing to reach it is not a refusal
@@ -65,6 +65,31 @@ await step('someone else cannot take a note\'s place away: it falls back to wher
 await step('someone else cannot change the words', () => refuses('editing another person\'s note', () => ben.update('v-note', { text: 'hijacked', edited: now, updated: now + 3000 })));
 await step('the author can edit', async () => { await ada.update('v-note', { text: 'verify: edited', edited: now + 4000, updated: now + 4000 }); const [th] = await ben.load(); if (th.text !== 'verify: edited') throw new Error('not edited'); });
 await step('a different space sees nothing', async () => { const got = await ctx.CrittablePersistable(opts({ space: space + '-other' })).load(); if (got.length) throw new Error('notes leaked between spaces'); });
+await step('a person who changes their name is shown under it on what they already wrote', async () => {
+  await ada.load(); await ada.setName('Ada Lovelace');
+  const [th] = await ben.load();
+  if (!th || th.authorName !== 'Ada Lovelace') throw new Error('the note still says ' + JSON.stringify(th && th.authorName));
+  await ben.load(); await ben.setName('Ben Franklin');
+  const [again] = await ada.load();
+  if (!again.replies.length || again.replies[0].authorName !== 'Ben Franklin') throw new Error('the reply still says ' + JSON.stringify(again.replies[0] && again.replies[0].authorName));
+});
+await step('nobody can rename someone else: a name only ever names whoever stored it', async () => {
+  const cy = ctx.Persistable(Object.assign(opts(), { storage: memory() })), raw = cy.collection('crittable-people');
+  const made = await raw.create({ v: 1, name: 'Not Ada', owner: (await ada.whoami()).id, id: 'x' });
+  const [th] = await ben.load(); await raw.remove(made.id);
+  if (th.authorName !== 'Ada Lovelace') throw new Error('a stranger renamed the note to ' + JSON.stringify(th.authorName));
+});
+await step('two names for one person: the newer one is shown', async () => {
+  const raw = ctx.Persistable(opts()).collection('crittable-people'), before = (await raw.list()).length;
+  await new Promise(r => setTimeout(r, 5));   // so the second is newer by the store's clock
+  const tab = ctx.CrittablePersistable(opts({ storage: adaKeeps })); await tab.setName('Ada L.');   // a second tab of Ada's that has not loaded makes a second object
+  const [th] = await ben.load(); const n = (await raw.list()).length;
+  if (n !== before + 1 || th.authorName !== 'Ada L.') throw new Error('expected a second object and the newer name; got ' + n + ' and ' + JSON.stringify(th.authorName));
+});
+await step('each person can take their name away again', async () => {
+  for (const keeps of [adaKeeps, benKeeps]) { const raw = ctx.Persistable(opts({ storage: keeps })).collection('crittable-people'), me = await ctx.Persistable(opts({ storage: keeps })).me(); for (const o of await raw.list()) if (o.owner === me.id) await raw.remove(o.id); }
+  const [th] = await ben.load(); if (th.authorName !== 'Ada') throw new Error('with no name kept, a note shows the name it was written under; got ' + JSON.stringify(th.authorName));
+});
 await step('the author can delete, and the reply goes with it', async () => { await ada.remove('v-note'); const got = await ben.load(); if (got.length) throw new Error('note still there: ' + JSON.stringify(got)); });
 // By token: the page's own site vouches for each visitor. Checked against the stand-in, and against a real store when its TOKEN_SECRET is in the environment.
 if (worker && (mock || process.env.TOKEN_SECRET)) {

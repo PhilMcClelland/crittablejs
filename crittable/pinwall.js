@@ -2107,7 +2107,9 @@ aside.fail .listing{display:none}
       me.name = v; me.alias = false; shelf.write('whoName', v);
       name.textContent = v; face.replaceChildren(badge({ authorName: v, authorId: me.id }));
       edit.setAttribute('aria-label', label()); edit.title = label();
-      announce('You are now ' + v + '. Notes you have already left keep the name they were written under.');
+      const carried = namesFollow();
+      if (carried) { stampMine(); saveName(); refreshPins(); scheduleList(); }
+      announce('You are now ' + v + (carried ? '. Your notes show it too.' : '. Notes you have already left keep the name they were written under.'));
       if (W.openId && threadBox) drawThread();
       box.rest();
     };
@@ -2377,6 +2379,23 @@ aside.fail .listing{display:none}
     if (back) sync();   // it is back: catch up without being asked
   };
   if (SHARED && typeof depot.status === 'function') { try { depot.status(up => setStore(!!up)); } catch (_) { /* our own loads will say */ } }
+  /* A name is who someone is now, not who they were when they wrote: change it and every note and reply of theirs shows
+     the new one. On a shared store that takes the store's help (backend.setName, which keeps one name per person and
+     names them by the store's own record of who wrote what); one that cannot gives each note the name it was written
+     under, as before. A board kept in this browser has one person, who is always the one reading. */
+  const namesFollow = () => !SHARED || (!READ_ONLY && typeof depot.setName === 'function');
+  const stampMine = () => {
+    if (me.id === 'anon') return;
+    for (const th of W.threads) {
+      if (th.authorId === me.id) th.authorName = me.name;
+      for (const r of th.replies || []) if (r && r.authorId === me.id) r.authorName = me.name;
+    }
+  };
+  /* a made-up name is not saved for everyone: it is only ever this browser's, and the notes already carry it */
+  const saveName = () => {
+    if (!SHARED || READ_ONLY || typeof depot.setName !== 'function' || me.alias || me.id === 'anon' || !me.name || me.name === OPTS.anonymousName) return;
+    try { Promise.resolve(depot.setName(me.name)).catch(() => {}); } catch (_) { /* the notes keep the names they carry */ }
+  };
   const loadAll = async () => {
     W.loading = true; W.loadFailed = false; scheduleList();
     let list = [];
@@ -2394,14 +2413,14 @@ aside.fail .listing{display:none}
     W.threads = W.threads.concat(got.filter(th => !known.has(th.id)));
     for (const th of W.threads) {
       th.replies = th.replies || [];
-      /* notes written here before this browser had an id are this browser's. They keep the name they were written
-         under, as a note does when its writer changes theirs; a page that says who is here (CRITTABLE_USER) names them */
+      /* notes written here before this browser had an id are this browser's, so they show its name like the rest */
       if (!SHARED && me.id !== 'anon' && (th.authorId === 'anon' || th.replies.some(r => r && r.authorId === 'anon'))) {
         const mine = th.authorId !== 'anon' ? {} : NAMED ? { authorId: me.id } : { authorId: me.id, authorName: me.name };
         if (th.replies.some(r => r && r.authorId === 'anon')) { th.replies.forEach(r => { if (r && r.authorId === 'anon') r.authorId = me.id; }); mine.replies = th.replies; }
         Object.assign(th, mine); depot.update(th.id, mine).catch(() => {});
       }
     }
+    if (!SHARED) stampMine();
     refreshPins(); scheduleList();
   };
   (async () => {
@@ -2413,6 +2432,8 @@ aside.fail .listing{display:none}
     try { await findGravatar(); } catch (_) {}
     if (SHARED && typeof depot.whoami === 'function') { try { const w = await depot.whoami(); if (w && w.id) Object.assign(me, w); } catch (_) { /* stay as we are */ } }
     await loadAll();
+    /* a name chosen before names were kept for everyone, or one the page gives, reaches the notes already written */
+    if (!W.loadFailed) saveName();
     booted = true;
     startSync();
     const pending = handoff.take();

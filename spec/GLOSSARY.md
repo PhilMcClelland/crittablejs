@@ -120,7 +120,8 @@ A pin is one object that grows through three stages in place.
 | `PIN.Open` | Its note is open, whether from the pin or from its row; the pin is the open note's face | V |
 | `PIN.Lifted` | Being dragged | B V |
 | `PIN.Muted` | Resolved but shown | B V |
-| `PIN.Lost` | Target element missing or hidden (including covered by another element or clipped away at the pin's spot); not drawn, the row says why | B V |
+| `PIN.Lost` | Target element missing, or with no box on the page (display: none); not drawn, the row says why | B V |
+| `PIN.OutOfSight` | Target on the page but out of sight (hidden, transparent, clipped away, or covered at the pin's spot); not drawn, and the row is an ordinary one. Opening the note from its row draws the pin on its spot anyway, and the card opens from it | new |
 | `PIN.Offstage` | Target scrolled out of view | B |
 | `PIN.Concealed` | All pins hidden by setting, or resolved and show-resolved off | B V |
 | `PIN.Pointed` | Its list row is under the pointer | new |
@@ -313,7 +314,7 @@ stateDiagram-v2
 | `ROW.Resolved` | Resolved, listed because show-resolved on | B V |
 | `ROW.OtherPage` | Thread belongs to another route | B V |
 | `ROW.Offscreen` | Same page, target out of view; says so, not muted | B V |
-| `ROW.Lost` | Target missing or hidden on the page (covered or clipped away counts as hidden); click opens the note as a dialog (`CARD.Adrift`) | B new |
+| `ROW.Lost` | Target missing on the page; click opens the note as a dialog (`CARD.Adrift`). A target that is only out of sight (`PIN.OutOfSight`) gets an ordinary row, with no reason line | B new |
 | `ROW.Pointed` | Its pin is under the pointer | new |
 | `ROW.Resolving` | Resolve in flight | new |
 | `ROW.Focus` | Keyboard focus (our addition) | V gap |

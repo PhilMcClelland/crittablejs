@@ -171,7 +171,7 @@
         spec('PIN.RestUnread', pin(B, '', true), null, true), spec('PIN.Preview', peek(), 'the pin itself, grown: first message over the reply row a click opens', true),
         spec('PIN.Open', openPin(), 'as drawn when the card is a phone sheet; beside a card the pin rides inside the bubble as the face', true), spec('PIN.Lifted', pin(C, 'lifted'), null, true),
         spec('PIN.Muted', pin(C, 'done'), null, true), spec('PIN.Lost', none('not drawn; the row says why'), null, true),
-        spec('PIN.Offstage', none('not visible; row shows it'), null, true), spec('PIN.Concealed', none('not drawn'), null, true),
+        spec('PIN.OutOfSight', none('not drawn; drawn while its note is open'), null, true), spec('PIN.Offstage', none('not visible; row shows it'), null, true), spec('PIN.Concealed', none('not drawn'), null, true),
         spec('PIN.Pointed', pin(A, 'hot'), 'its list row is hovered: lifts, highlighter ring', true),
         spec('PIN.Quoted', b('span', { class: 'plain' }, b('span', { text: 'Morning catch, ' }), b('span', { class: 'quoted', text: 'laid out on ice' })), 'the words a note is anchored to keep a highlighter wash', true)),
       surface('4. Thread card',

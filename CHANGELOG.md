@@ -2,6 +2,10 @@
 
 A page runs the version its script tag names (the `@v…` in a hosted address), or the version of the folder that was copied. `data-version` on the tool's element says which.
 
+## 0.3.4
+
+- A note whose element is on the page but out of sight (hidden, transparent, clipped away or covered) gets an ordinary row in the list, with no "Hidden on this page right now" line. Its pin is simply not drawn, and opening the note from its row draws the pin on its spot so the card opens from it. A note whose element has no box at all (`display: none`) still opens as a dialog that says why.
+
 ## 0.3.3
 
 - Fixed: since 0.3.1, on a page where the launcher shows, the panel could be seen open for a moment on load and then slide shut. It is now built open or shut as it will start, so its first frame is its real one.

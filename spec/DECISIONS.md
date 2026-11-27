@@ -358,3 +358,10 @@ None yet.
 - **Why**: a setting should do what it says. Under (a) "Show launcher" also opened the panel and pinned it open, which no reader would guess from its name, and which made a page's own button impossible. Under (c) the only way to strand a reader is the launcher hidden and the keys off on a page with no button of its own, so that one case shows the launcher anyway. A page says it has its own way in by starting the launcher hidden (`showLauncher: false`) or by sending a panel event.
 - **Events**: `crittable:open-panel`, `crittable:close-panel` and `crittable:toggle-panel` on `window`, named for what they act on (the panel), after the existing `panel-opened` and `panel-closed`. A bare `toggle` was rejected as not saying what it toggles. Closing stops placing, as the add key does.
 - **Carried out in**: `seatLauncher`, `setHideLauncher` and the panel events in `crittable/pinwall.js`; `showLauncher` in `docs/reference.md`.
+
+## Does the list say when a note's element is out of sight?
+- **Asked**: 2026-11-27, by the maintainer, on seeing "Hidden on this page right now" under notes on a page that swaps scenes
+- **Options**: (a) as it was: the row is muted and says "Hidden on this page right now", and opening it shows a dialog; (b) the row is an ordinary one, the pin is simply not drawn, and opening the note from its row draws the pin on its spot so the card opens from it
+- **Decided**: 2026-11-27 → (b), the maintainer's call
+- **Why**: on a page that swaps scenes most notes are out of sight most of the time, so the line was on nearly every row and said nothing a reader could act on. The note is still on this page; asking for it is the moment to show where it is.
+- **Carried out in**: `crittable/pinwall.js`: in the pin loop an open note needs only that its element has a box (`hasPlace`), not that it is shown or uncovered; the row treats the hidden state as "This page". A note whose element has no box at all (display: none) still opens as a dialog that says why, and "Can't be located" rows are unchanged. New state `PIN.OutOfSight`; `ROW.Lost` no longer covers hidden.

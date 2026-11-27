@@ -136,6 +136,18 @@ const seeded = fail => `(() => { const rows = [
       const shown = async () => Object.fromEntries((await q('.pin', '[el.getAttribute("aria-label"), getComputedStyle(el).visibility]')).map(([l, v]) => [/^Note (\S+)/.exec(l)[1], v]));
       let s = await shown();
       assert.deepStrictEqual([s['1'], s['2'], s['3'], s['4']], ['hidden', 'visible', 'visible', 'visible'], 'the covered scene\'s pin is hidden; the scene on top, the page and a card under a see-through link show theirs: ' + JSON.stringify(s));
+      /* out of sight is not lost: the row is an ordinary one, and opening it pops the pin up on its spot with the card */
+      await page.locator('.dock button').first().click(); await page.waitForTimeout(500);
+      const row = page.locator('.scroll li', { hasText: 'on #scene-under' });
+      assert.strictEqual(await row.evaluate(li => li.classList.contains('lost')), false, 'the row is not muted');
+      assert(!/Hidden on this page/.test(await row.textContent()), 'and says nothing about being hidden');
+      await row.locator('.pick').click(); await page.waitForTimeout(800);
+      s = await shown();
+      assert.strictEqual(s['1'], 'visible', 'opening it draws its pin: ' + JSON.stringify(s));
+      assert.deepStrictEqual(await q('.thread', 'el.classList.contains("adrift")'), [false], 'and the card opens from the pin, not as a dialog');
+      await page.keyboard.press('Escape'); await page.waitForTimeout(500); await page.locator('aside button[aria-label="Close list"]').click(); await page.waitForTimeout(500);
+      s = await shown();
+      assert.strictEqual(s['1'], 'hidden', 'closed again, the pin goes back out of sight: ' + JSON.stringify(s));
       await page.evaluate(() => { document.getElementById('scene-over').style.clipPath = 'inset(0 0 100% 0)'; }); await page.waitForTimeout(600);
       s = await shown();
       assert.deepStrictEqual([s['1'], s['2'], s['3']], ['visible', 'hidden', 'visible'], 'clipping the top scene away swaps which pin shows: ' + JSON.stringify(s));

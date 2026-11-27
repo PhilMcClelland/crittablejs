@@ -1,4 +1,4 @@
-/*! Crittable.js 0.3.3 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
+/*! Crittable.js 0.3.4 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
 // Crittable.js: attach notes to spots on a page.
 (() => {
   'use strict';
@@ -10,7 +10,7 @@
   const keyIs = (evt, name) => String(evt.key).toLowerCase() === String(KEYS[name]).toLowerCase();
   const isBack = evt => keyIs(evt, 'back');
   const keyCap = name => /^esc(ape)?$/i.test(KEYS[name]) ? 'Esc' : String(KEYS[name]).toUpperCase();
-  const VERSION = '0.3.3';   // also in the first line of this file and in CHANGELOG.md
+  const VERSION = '0.3.4';   // also in the first line of this file and in CHANGELOG.md
   const GUARD = '__' + OPTS.tagName;
   /* the product name, with a file extension (".js") split off so the lockup can set it quietly */
   const NAME = /^(.+?)(\.[a-z]{1,4})?$/i.exec(String(OPTS.productName)) || [0, String(OPTS.productName), ''];
@@ -930,6 +930,7 @@ aside.fail .listing{display:none}
     const whole = m[1] === 'circle' ? Math.hypot(w, h) / Math.SQRT2 : null;
     return radii.length > 0 && radii.some((r, i) => lengthOf(r, whole === null ? (i ? h : w) : whole) === 0);
   };
+  const hasPlace = elm => { const b = elm.getBoundingClientRect(); return b.width > 0 && b.height > 0; };
   const clippedAway = elm => {
     for (let n = elm; n && n !== document.documentElement; n = n.parentElement) {
       const clip = getComputedStyle(n).clipPath;
@@ -1141,7 +1142,11 @@ aside.fail .listing{display:none}
         continue;
       }
       W.rounds[id] = 0;
-      if (!isShown(elm)) { entry2.btn.style.visibility = 'hidden'; markState(id, 'hidden'); continue; }
+      /* An open note shows its pin wherever its element has a place on the page, even out of sight (covered, clipped,
+         transparent): the reader asked for this note, so it pops up on its spot and the card opens from it. Only an
+         element with no box at all (display: none) leaves it to open as a dialog. */
+      const open = W.openId === id;
+      if (!(open ? hasPlace(elm) : isShown(elm))) { entry2.btn.style.visibility = 'hidden'; markState(id, 'hidden'); continue; }
       const b = elm.getBoundingClientRect();
       let x = b.left + th.anchor.dx - PIN_SZ / 2, y = b.top + th.anchor.dy - PIN_SZ / 2;
       const sel = th.anchor.sel;
@@ -1159,8 +1164,7 @@ aside.fail .listing{display:none}
         /* the drop already saved the place; it is saved again only if the target moved under the pin while it settled */
         if (enc(th.anchor) !== was) { hold(id); depot.update(id, { anchor: th.anchor }).catch(() => {}).then(() => release(id)); }
       }
-      /* out of sight the same way as an element that is not shown: an open note then waits as a dialog, as it does for one */
-      if (isCovered(entry2, elm, x + PIN_SZ / 2, y + PIN_SZ / 2, b)) { entry2.btn.style.visibility = 'hidden'; markState(id, 'hidden'); continue; }
+      if (!open && isCovered(entry2, elm, x + PIN_SZ / 2, y + PIN_SZ / 2, b)) { entry2.btn.style.visibility = 'hidden'; markState(id, 'hidden'); continue; }
       entry2.btn.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)';
       entry2.btn.style.zIndex = Math.max(5, zNear(elm) + 1);
       entry2.btn.style.visibility = 'visible';
@@ -2302,13 +2306,14 @@ aside.fail .listing{display:none}
     const phase = (spec && spec.id === th.id && spec.phase) || W.status[th.id] || 'wait', fresh = isFresh(th), sel = W.selected === th.id;
     const stamp = since(th.created), n = ordinal(th.id), quote = quoteOf(th);
     const cls = [sel && 'sel', fresh && 'unread', th.resolved && 'resolved', phase === 'other' && 'other', phase === 'off' && 'off',
-      (phase === 'lost' || phase === 'hidden') && 'lost', inFlight.has(th.id) && 'resolving'].filter(Boolean).join(' ');
-    const where = phase === 'other' ? th.route : phase === 'shown' || phase === 'wait' ? 'This page' : REASONS[phase];
+      phase === 'lost' && 'lost', inFlight.has(th.id) && 'resolving'].filter(Boolean).join(' ');
+    /* a note whose element is out of sight just now is an ordinary row: its pin is not drawn, and it pops up when the row is opened */
+    const where = phase === 'other' ? th.route : phase === 'shown' || phase === 'wait' || phase === 'hidden' ? 'This page' : REASONS[phase];
     return {
       id: th.id, cls,
       sig: [th.text, quote, th.authorName, th.replies.length, fresh, th.resolved, phase, sel, n, stamp, th.route, inFlight.has(th.id)],
       build: () => [
-        build('button', { class: 'pick', type: 'button', title: REASONS[phase] && phase !== 'wait' ? REASONS[phase] : since(th.created, true), 'aria-current': sel ? 'true' : null, on: { click: () => { fromRow = th.id; jumpTo(th.id); } } },
+        build('button', { class: 'pick', type: 'button', title: REASONS[phase] && phase !== 'wait' && phase !== 'hidden' ? REASONS[phase] : since(th.created, true), 'aria-current': sel ? 'true' : null, on: { click: () => { fromRow = th.id; jumpTo(th.id); } } },
           badge(th),
           build('span', { class: 'txt' },
             where === 'This page' ? null : build('span', { class: 'meta', text: where }),

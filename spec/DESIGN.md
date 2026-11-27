@@ -110,6 +110,7 @@ Selectors are inside the shadow root. "JS" names the code path that sets the hoo
 | `PIN.Lifted` | `.pin.lifted` (JS drag start) | lifts 4px, `pin-lift`, grabbing cursor | `fast` lift, settle `.glide` `medium` |
 | `PIN.Muted` | `.pin.done` + `.ok` | `pin-paper` frame, greyscale avatar, opacity .72; a `pin-ink` check badge (`.ok`, the `tick` icon) sits on the lower right, above the avatar | `fast` opacity |
 | `PIN.Lost` | inline `visibility:hidden` (frame loop, after the retries) | not drawn; the row carries the reason (`ROW.Lost`) and the note opens as `CARD.Adrift` | instant |
+| `PIN.OutOfSight` | inline `visibility:hidden` (frame loop) | not drawn; the row is ordinary; drawn on its spot while its note is open | instant |
 | `PIN.Offstage` | inline `visibility:hidden` (frame loop) | not visible; the row carries it (`ROW.Offscreen`) | instant |
 | `PIN.Concealed` | pin not created (`visiblePins`) | not drawn | instant |
 | `PIN.Pointed` | `.pin.hot` (JS `point`, row hover) | lifts 2px, `accent` ring with an ink edge | `fast` |
@@ -185,7 +186,7 @@ Flags are independent classes on the `li`, layered (Selected beats Hover).
 | `ROW.Resolved` | `li.resolved` | author and text in `text-meta`; the resolve toggle's `tick` sits on a filled `done` disc and stays visible | `fast` |
 | `ROW.OtherPage` | `li.other` | content at .68 opacity; meta shows the route | n/a |
 | `ROW.Offscreen` | `li.off` | full strength; meta says "Off screen". Not muted: the note is on this page and a click scrolls to it | n/a |
-| `ROW.Lost` | `li.lost` (status lost or hidden) | same mute; meta gives the reason | n/a |
+| `ROW.Lost` | `li.lost` (status lost) | same mute; meta gives the reason | n/a |
 | `ROW.Pointed` | `li.hot` (JS `point`, pin hover) | `hover` wash | `fast` |
 | `ROW.Resolving` | `li.resolving` (JS `inFlight`) | toggles inert at .6 | instant |
 | `ROW.Focus` | `.pick:focus-visible`, `.tick:focus-visible` | 2px `focus` ring | instant |

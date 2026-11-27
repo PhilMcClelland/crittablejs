@@ -52,7 +52,7 @@ Every option is a key of `window.CRITTABLE_CONFIG` (set it before the script tag
 | `gravatar` | `false` | Look up the person's Gravatar ("Who is commenting"). |
 | `sharedAvatars` | `false` | On a shared store, show other people's avatar images too ("Who is commenting"). |
 | `backend` | not set | A shared store (the README, "Sharing notes"). `data-backend` on the script tag sets it for you. |
-| `onEvent` | does nothing | A function the tool calls with `{ type, … }` when something happens: `type` is `created`, `edited`, `replied`, `resolved`, `deleted`, `store`, or `panel-opened` / `panel-closed` (with `side` and `inset`, the px the panel takes). An error it throws is ignored. |
+| `onEvent` | does nothing | A function the tool calls with `{ type, … }` when something happens: `type` is `created`, `edited`, `replied`, `resolved`, `deleted`, `store`, `opened` (with `id`, whenever a note is opened), or `panel-opened` / `panel-closed` (with `side` and `inset`, the px the panel takes). An error it throws is ignored. |
 
 `stateSheet` is also read: it is how `sample/states.html` draws the tool's states, and is not meant for a host page.
 
@@ -79,6 +79,24 @@ All optional, all on the tool's own `<script>` tag.
 A pin is drawn only while its element can be seen. It is hidden when the element, or anything around it, is `display: none`, `visibility: hidden`, `opacity: 0`, or clipped away entirely by a `clip-path` (an `inset()` that meets itself, or a shape with no area), and when something else covers it at the pin's spot.
 
 A page that stacks scenes in one place and swaps them should make a scene that is not showing one of those: `opacity: 0` or `visibility: hidden` is the surest, and a full `clip-path` works too. Being covered is found by asking the browser what a click at the pin's spot would reach, so it cannot see an element with `pointer-events: none`; give such a scene one of the styles above when it is not showing, and its pins hide with it.
+
+### Bringing a note into sight
+
+When a note is opened from anywhere but its own pin (its row in the list, `J` / `K`, or a link from another page), the tool first brings its element where it can be seen. Each step runs only if the one before has not done it:
+
+1. **`hidden="until-found"`.** If the element is inside one, the tool does what the browser does for find-in-page: it fires `beforematch` on that element and removes the attribute (that attribute only, never a plain `hidden`). A page built this way needs nothing else, and gets find-in-page and anchor links too.
+2. **The page.** The tool fires `crittable:reveal` on the element. It bubbles, so the code that owns a scene can listen on the scene's container. `event.detail` is `{ id, route }`. To show the element, call `event.waitUntil(promise)`: the note opens when the promise settles, or after two seconds, whichever is first, and opens even if the promise fails. Call `event.preventDefault()` instead if the element is shown at once. Either one tells the tool the page has handled it, and nothing below runs. It is fired on every such open, not only when the element looks out of sight, so a listener whose scene is already showing should simply return.
+
+   ```js
+   stage.addEventListener('crittable:reveal', event => {
+     const scene = event.target.closest('.scene');
+     if (scene && !scene.classList.contains('current')) event.waitUntil(showScene(scene));   // showScene returns a promise
+   });
+   ```
+3. **Scrolling to it.** An element in the page's flow that is off screen is scrolled to.
+4. **Scrolling back.** An element in a `position: fixed` layer that is out of sight cannot be scrolled to, so the page is scrolled back to where it was when the note was written, kept as a share of the page's scroll range. That brings back the scene on a page whose fixed stage follows its scroll. Notes written before 0.3.5 have no such place, and skip this step.
+
+Then the note opens, and its pin is drawn on its spot whatever the steps managed. An element that cannot be found at all skips the steps, and the note opens as a dialog that says why.
 
 ## Who is commenting
 

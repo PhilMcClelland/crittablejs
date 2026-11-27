@@ -109,6 +109,59 @@ const seeded = fail => `(() => { const rows = [
       await page.locator('.thread .compose textarea').focus(); await key('Escape', 600);
       assert.strictEqual((await q('.thread')).length, 0, 'Escape closes the note'); assert(/^Note 1/.test(await focus()), 'focus returns to the pin');
     });
+    /* opening a note from its row brings its element into sight: the browser's until-found, then the page, then a scroll */
+    const revealing = `(() => {
+      const at = v => ({ k: 'css', v, dx: 20, dy: 20 }), row = (id, anchor) => ({ id, text: 'note ' + id, authorName: 'Ada Vale', authorId: 'u9', created: Date.now() - 6e4, updated: 1, route: '/sample/', resolved: false, replies: [], anchor });
+      const rows = [row('found', at('#in-found')), row('staged', at('#scene-b')), row('scrolled', Object.assign(at('#scene-s'), { sy: 0.5 }))];
+      window.__opened = []; window.__heard = []; window.__match = 0; window.__rows = rows;
+      window.CRITTABLE_CONFIG = { onEvent: e => { if (e.type === 'opened') window.__opened.push(e.id); }, backend: { async load() { return JSON.parse(JSON.stringify(rows)); }, async create(t) { rows.push(t); }, async update() {}, async remove() {} } };
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.style.minHeight = '4000px';
+        const add = (html) => { const d = document.createElement('div'); d.innerHTML = html; document.body.append(d.firstElementChild); };
+        add('<div id="folded" hidden="until-found" style="position:absolute;left:40px;top:300px"><p id="in-found" style="width:200px;height:60px;margin:0">until found</p></div>');
+        document.getElementById('folded').addEventListener('beforematch', () => window.__match++);
+        /* a stage of two scenes; the page switches with its own jump, which takes a while */
+        add('<div id="stage" style="position:fixed;left:300px;top:150px;width:300px;height:200px;z-index:5"><div id="scene-a" style="position:absolute;inset:0;background:#ddd"></div><div id="scene-b" style="position:absolute;inset:0;background:#bbb;clip-path:inset(0 0 100% 0)"></div></div>');
+        document.getElementById('stage').addEventListener('crittable:reveal', e => {
+          window.__heard.push(e.detail);
+          const b = document.getElementById('scene-b'); if (!b.contains(e.target)) return;
+          e.waitUntil(new Promise(r => setTimeout(() => { b.style.clipPath = 'none'; document.getElementById('scene-a').style.display = 'none'; r(); }, 400)));
+        });
+        /* a fixed scene that follows the scroll, and does not answer */
+        add('<div id="scene-s" style="position:fixed;left:700px;top:150px;width:200px;height:150px;background:#9c9;z-index:5;clip-path:inset(0 0 100% 0)"></div>');
+        addEventListener('scroll', () => { document.getElementById('scene-s').style.clipPath = scrollY > 1200 ? 'none' : 'inset(0 0 100% 0)'; });
+      });
+    })();`;
+    await scene('opening a note from its row brings its element into sight', {}, revealing, async ({ page, q }) => {
+      const openRow = async t => { if ((await q('aside', 'el.classList.contains("shut")'))[0]) { await page.locator('.dock button').first().click(); await page.waitForTimeout(500); } await page.locator('.scroll li', { hasText: t }).locator('.pick').click(); };
+      await openRow('note found'); await page.waitForTimeout(600);
+      assert.deepStrictEqual(await page.evaluate(() => [window.__match, document.getElementById('folded').hasAttribute('hidden')]), [1, false], 'until-found: beforematch fired and the attribute removed');
+      await page.keyboard.press('Escape'); await page.waitForTimeout(400);
+      const y0 = await page.evaluate(() => scrollY);
+      await openRow('note staged'); await page.waitForTimeout(150);
+      assert.strictEqual((await q('.thread')).length, 0, 'the note waits while the page changes scene');
+      await page.waitForTimeout(700);
+      assert.strictEqual((await q('.thread')).length, 1, 'and opens once the page is done');
+      const heard = await page.evaluate(() => window.__heard);
+      assert(heard.some(d => d.id === 'staged' && d.route === '/sample/'), 'the event carries the note and its page: ' + JSON.stringify(heard));
+      assert.strictEqual(await page.evaluate(() => scrollY), y0, 'a page that answered is not scrolled as well');
+      await page.keyboard.press('Escape'); await page.waitForTimeout(400);
+      await openRow('note scrolled'); await page.waitForTimeout(1000);
+      const y = await page.evaluate(() => [scrollY, document.documentElement.scrollHeight - innerHeight]);
+      assert(Math.abs(y[0] - y[1] * 0.5) < 5, 'a fixed scene that did not answer: the page goes back to where the note was written: ' + JSON.stringify(y));
+      assert.strictEqual((await q('.thread')).length, 1, 'and the note opens');
+      assert.deepStrictEqual(await page.evaluate(() => window.__opened), ['found', 'staged', 'scrolled'], 'opened is told for each');
+      /* a note written on a fixed scene keeps where the page was scrolled; one in the page's flow does not */
+      await page.keyboard.press('Escape'); await page.waitForTimeout(400); await page.keyboard.press('Escape'); await page.waitForTimeout(400);
+      for (const [x, y, text] of [[760, 200, 'on the fixed scene'], [60, 330, 'in the flow']]) {
+        await page.keyboard.press('c'); await page.waitForTimeout(200);
+        const x2 = page.locator('aside button[aria-label="Close list"]'); if (await x2.isVisible()) { await x2.click(); await page.waitForTimeout(400); }
+        await page.mouse.click(x, y); await page.waitForTimeout(450); await page.keyboard.type(text); await page.keyboard.press('Enter'); await page.waitForTimeout(700);
+        await page.keyboard.press('Escape'); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+      }
+      const made = await page.evaluate(() => window.__rows.slice(3).map(r => [r.text, r.anchor.v, r.anchor.sy]));
+      assert(made.length === 2 && typeof made[0][2] === 'number' && Math.abs(made[0][2] - 0.5) < 0.02 && made[1][2] === undefined, 'sy only on the fixed scene: ' + JSON.stringify(made));
+    });
     /* the panel starts shut on a page with the launcher shown: it must never be seen open first and slide away */
     const watchPanel = `window.__panel = []; (function look() {
       const h = document.querySelector('pin-note-board'), a = h && h.shadowRoot && h.shadowRoot.querySelector('aside');

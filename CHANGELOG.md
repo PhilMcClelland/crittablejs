@@ -2,6 +2,11 @@
 
 A page runs the version its script tag names (the `@v…` in a hosted address), or the version of the folder that was copied. `data-version` on the tool's element says which.
 
+## 0.3.5
+
+- Opening a note from its row, `J` / `K` or a link brings its element into sight in steps: an element inside `hidden="until-found"` is shown as the browser shows one for find-in-page (`beforematch`); then the page is asked, with a `crittable:reveal` event on the element that it can answer with `event.waitUntil(promise)` or `preventDefault()`; then an element in the page's flow is scrolled to; then an element in a fixed layer is brought back by scrolling to where the page was when the note was written. `docs/reference.md`, "Bringing a note into sight". Notes written before 0.3.5 do not have that last place and skip the last step.
+- `onEvent` is told `opened`, with the note's `id`, whenever a note is opened.
+
 ## 0.3.4
 
 - A note whose element is on the page but out of sight (hidden, transparent, clipped away or covered) gets an ordinary row in the list, with no "Hidden on this page right now" line. Its pin is simply not drawn, and opening the note from its row draws the pin on its spot so the card opens from it. A note whose element has no box at all (`display: none`) still opens as a dialog that says why.

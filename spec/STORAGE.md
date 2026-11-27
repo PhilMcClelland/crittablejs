@@ -38,7 +38,7 @@ backend = {
 
 A thread is `{ id, text, authorId, authorName, authorAvatar?, created, updated, edited?, route, anchor, resolved, replies }`; a reply is `{ id, text, authorId, authorName, authorAvatar?, at, edited? }`. Ids are made by the tool. Both also carry `v`, the note format that wrote them (1 today; a stored note without one is 1). A store keeps `v` and gives it back unchanged. A shared store outlives any one copy of the script, so the tool leaves out, and never writes to, a note or reply whose `v` is higher than it knows. `updated` must change whenever a note or its replies change: it is what marks a note unread for everyone else.
 
-`anchor` is the tool's to write and a store's to keep whole: `{ k, v, dx, dy }`, with `tag`, `alt`, `sel` and `was` when the tool sends them. A store checks only that `k` and `v` are non-empty strings.
+`anchor` is the tool's to write and a store's to keep whole: `{ k, v, dx, dy }`, with `tag`, `alt`, `sel`, `was` and `sy` (where the page was scrolled, for an element in a fixed layer) when the tool sends them. A store checks only that `k` and `v` are non-empty strings.
 
 What a store holds was written by other people, so `load()` must not fail because of one row: a row it cannot read is left out, and the rest are returned. Keep rows by id in something with no inherited names (`Object.create(null)` or a `Map`), since an id may be `constructor`.
 

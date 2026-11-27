@@ -1,4 +1,4 @@
-/*! Crittable.js 0.3.4 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
+/*! Crittable.js 0.3.5 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
 // Crittable.js: attach notes to spots on a page.
 (() => {
   'use strict';
@@ -10,7 +10,7 @@
   const keyIs = (evt, name) => String(evt.key).toLowerCase() === String(KEYS[name]).toLowerCase();
   const isBack = evt => keyIs(evt, 'back');
   const keyCap = name => /^esc(ape)?$/i.test(KEYS[name]) ? 'Esc' : String(KEYS[name]).toUpperCase();
-  const VERSION = '0.3.4';   // also in the first line of this file and in CHANGELOG.md
+  const VERSION = '0.3.5';   // also in the first line of this file and in CHANGELOG.md
   const GUARD = '__' + OPTS.tagName;
   /* the product name, with a file extension (".js") split off so the lockup can set it quietly */
   const NAME = /^(.+?)(\.[a-z]{1,4})?$/i.exec(String(OPTS.productName)) || [0, String(OPTS.productName), ''];
@@ -97,6 +97,7 @@
     if (!way(a)) return false;
     for (const side of ['dx', 'dy']) { const n = Number(a[side]); a[side] = Number.isFinite(n) && Math.abs(n) <= 1e5 ? n : 0; }
     delete a.score;
+    if (a.sy != null) { const n = Number(a.sy); if (Number.isFinite(n) && n >= 0 && n <= 1) a.sy = n; else delete a.sy; }
     if (a.tag == null) delete a.tag;
     if (!words(a.was, 80)) delete a.was;
     if (Array.isArray(a.alt)) a.alt = a.alt.filter(way).slice(0, 8).map(s => (s.tag == null ? { k: s.k, v: s.v } : { k: s.k, v: s.v, tag: s.tag })); else delete a.alt;
@@ -309,6 +310,10 @@
     const [first, ...rest] = ladderOf(elm);
     const a = Object.assign(first, { dx: Math.round(x - field.left), dy: Math.round(y - field.top) });
     delete a.score;   // how the description was chosen, not part of the place
+    /* an element in a fixed layer does not move with the page, so scrolling to it shows nothing new. On a page that
+       changes what such a layer shows as it scrolls, where the page was scrolled is part of the place: kept as a share of
+       the page's scroll range, which survives a window of another size better than pixels do */
+    { const range = scrollRange(); if (range > 0 && inFixed(elm)) a.sy = Math.round(scrollY / range * 1e4) / 1e4; }
     if (POSITIONAL.test(a.v)) a.was = firstWords(elm);
     const sure = rest.filter(r => !POSITIONAL.test(r.v));
     if (sure.length) a.alt = sure.slice(0, SPARES).map(r => r.tag ? { k: r.k, v: r.v, tag: r.tag } : { k: r.k, v: r.v });
@@ -930,6 +935,8 @@ aside.fail .listing{display:none}
     const whole = m[1] === 'circle' ? Math.hypot(w, h) / Math.SQRT2 : null;
     return radii.length > 0 && radii.some((r, i) => lengthOf(r, whole === null ? (i ? h : w) : whole) === 0);
   };
+  const scrollRange = () => Math.max(0, (document.documentElement.scrollHeight || 0) - innerHeight);
+  const inFixed = elm => { for (let n = elm; n && n !== document.documentElement; n = n.parentElement) if (getComputedStyle(n).position === 'fixed') return true; return false; };
   const hasPlace = elm => { const b = elm.getBoundingClientRect(); return b.width > 0 && b.height > 0; };
   const clippedAway = elm => {
     for (let n = elm; n && n !== document.documentElement; n = n.parentElement) {
@@ -1645,12 +1652,14 @@ aside.fail .listing{display:none}
     /* moving from one note to another: start a fresh card instead of redrawing the old one in place */
     if (threadBox && W.openId !== id) { threadBox.remove(); threadBox = null; replyDraft = ''; editing = null; askDelete = false; editReply = null; askReply = null; cardMenu = false; cardErr = ''; }
     walking = !!walk;
+    if (W.openId !== id) ping('opened', { id });
     W.openId = id; W.selected = id;
     logSeen(id);
     /* bring the note's pin onto the page first (it may have been filtered out), so the note can open from it */
     refreshPins(); seatNow();
     const elm = resolveEl(th), r = pinBox(id);
-    if (r && (r.top < 40 || r.bottom + 220 > innerHeight - 40) && elm) elm.scrollIntoView({ block: 'center', behavior: calmMotion() ? 'auto' : 'smooth' });
+    if (r && (r.top < 40 || r.bottom + 220 > innerHeight - 40) && elm && pageShowed !== id && !inFixed(elm)) elm.scrollIntoView({ block: 'center', behavior: calmMotion() ? 'auto' : 'smooth' });
+    pageShowed = null;
     drawThread();
     /* after the page has scrolled the anchor into view, re-pick the side the note opens on */
     setTimeout(() => {
@@ -2363,7 +2372,38 @@ aside.fail .listing{display:none}
     reconcile(nowList, mineHere.map(rowOf)); reconcile(awayList, others.map(rowOf));
     listDrawn = true;
   };
-  const jumpTo = (id, walk) => {
+  /* Opening a note from anywhere but its own pin (its row, J and K, a link from another page) first brings its element
+     where it can be seen, in four steps, each tried only when the one before has not done it:
+     1. an element inside hidden="until-found" is shown the way the browser shows one for find-in-page: beforematch is
+        fired on that element and the attribute removed (that attribute only, never a plain hidden);
+     2. the page is asked: crittable:reveal, fired on the element, bubbling, with { id, route }. A page that changes what
+        it shows by its own means (a stage of scenes) answers by calling event.waitUntil(promise) or preventDefault();
+        the note then waits for the promise, two seconds at most, and nothing below runs. It is fired on every such
+        open, not only when the element looks out of sight, because the page knows better than the tool what it shows;
+     3. an element in the page's flow that is off screen is scrolled to;
+     4. an element in a fixed layer that is out of sight is brought back by scrolling to where the page was when the
+        note was written (anchor.sy), for a page whose fixed stage follows its scroll. Notes from before 0.3.5 have none.
+     Then the note opens. Its pin is drawn on its spot whatever the steps managed (an open note's pin always is). */
+  let opening = 0, pageShowed = null;
+  const unfold = elm => {
+    for (let n = elm; n && n !== document.documentElement; n = n.parentElement) {
+      if (n.getAttribute && n.getAttribute('hidden') === 'until-found') {
+        try { n.dispatchEvent(new Event('beforematch', { bubbles: true })); } catch (_) { /* the page's handler failed: the attribute still goes */ }
+        n.removeAttribute('hidden');
+      }
+    }
+  };
+  const askPage = async (elm, th) => {
+    const waits = []; let open = true;
+    const ev = new CustomEvent('crittable:reveal', { bubbles: true, cancelable: true, detail: { id: th.id, route: th.route } });
+    ev.waitUntil = p => { if (open) waits.push(Promise.resolve(p)); };
+    try { elm.dispatchEvent(ev); } catch (_) { /* a listener that throws has still been asked */ }
+    open = false;
+    if (waits.length) await Promise.race([Promise.allSettled(waits), pause(2000)]);   // a promise that fails or never settles still lets the note open
+    return ev.defaultPrevented || waits.length > 0;
+  };
+  const outOfView = elm => { const b = elm.getBoundingClientRect(), seen = Math.max(0, Math.min(b.bottom, innerHeight) - Math.max(b.top, 0)); return seen < b.height / 2; };
+  const jumpTo = async (id, walk) => {
     const th = lookup(id);
     if (!th) return;
     /* on a phone the panel covers the page, so it steps aside for the note it was asked to open */
@@ -2371,8 +2411,20 @@ aside.fail .listing{display:none}
     if (th.route !== W.route) { if (!samePage(th.route)) return; handoff.put({ id, sidebar: W.sideOpen }); location.assign(new URL(th.route, location.href).href); return; }   // never follow an address that is not a page on this site; resolved against this page, as samePage judged it, not against a <base>
     const elm = resolveEl(th);
     if (elm) {
-      const b = elm.getBoundingClientRect(), seen = Math.max(0, Math.min(b.bottom, innerHeight) - Math.max(b.top, 0));
-      if (seen < b.height / 2) elm.scrollIntoView({ block: 'center', behavior: calmMotion() ? 'auto' : 'smooth' });
+      const mine = ++opening;
+      unfold(elm);
+      const answered = await askPage(elm, th);
+      if (mine !== opening) return;   // another note was asked for meanwhile
+      pageShowed = answered ? id : null;
+      if (!answered) {
+        const fixed = inFixed(elm);
+        if (!fixed && outOfView(elm)) elm.scrollIntoView({ block: 'center', behavior: calmMotion() ? 'auto' : 'smooth' });
+        else if (fixed && typeof th.anchor.sy === 'number' && (!isShown(elm) || W.status[id] === 'hidden')) {
+          scrollTo({ top: th.anchor.sy * scrollRange(), behavior: 'auto' });
+          await pause(TIME.medium);   // the page follows its scroll: let it change what it shows
+          if (mine !== opening) return;
+        }
+      }
       blink(elm);
     }
     showThread(id, walk);

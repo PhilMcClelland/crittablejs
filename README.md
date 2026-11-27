@@ -9,7 +9,7 @@ Make any coded prototype crittable. Add one script tag and people can pin a note
 Add one tag to your page:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/PhilMcClelland/crittablejs@v0.3.4/crittable/crittable.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/PhilMcClelland/crittablejs@v0.3.5/crittable/crittable.js"></script>
 ```
 
 A round button appears in the corner. Press `C`, click anything on the page, and write a note.
@@ -31,7 +31,7 @@ Working with an agent? Tell it "Add github.com/PhilMcClelland/crittablejs to thi
 By default notes stay in the browser that wrote them. To share them between everyone who opens the prototype, add a store. Crittable.js runs no service of its own: it shares notes through [Persistable.js](https://persistablejs.philmcclelland.com), which keeps them in a backend you own and set up once.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/PhilMcClelland/crittablejs@v0.3.4/crittable/crittable.js"
+<script src="https://cdn.jsdelivr.net/gh/PhilMcClelland/crittablejs@v0.3.5/crittable/crittable.js"
         data-backend="persistable" data-key="link"
         data-url="https://persistable.YOUR-SUBDOMAIN.workers.dev"></script>
 ```

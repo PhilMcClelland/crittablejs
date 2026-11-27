@@ -2219,7 +2219,6 @@ aside.fail .listing{display:none}
     seatSide(true); ping(on ? 'panel-opened' : 'panel-closed', insetOf());
     if (on) scheduleList();
   };
-  if (W.hideLauncher) setHideLauncher(true);
   let listDrawn = false;
   const reconcile = (ul, rows) => {
     const live = () => [...ul.children].filter(li => !li.classList.contains('leaving'));
@@ -2470,6 +2469,8 @@ aside.fail .listing{display:none}
     if (!SHARED) stampMine();
     refreshPins(); scheduleList();
   };
+  /* a launcher the reader hid last time stays hidden; the panel it opens needs the list, so this waits until the list is set up */
+  if (W.hideLauncher) setHideLauncher(true);
   (async () => {
     if (!shelf.live && !OPTS.backend) warn('Browser storage is unavailable. Notes will be lost on reload.');
     if (shelf.read('placing', false)) setAiming(true);

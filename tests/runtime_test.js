@@ -372,6 +372,11 @@ const test = async (name, fn) => { await fn(); results.push(name); };
     await sendReply(root, 'a first reply'); await settle();
     assert.deepStrictEqual(said, ['Site Name'], 'the first reply saves it: ' + JSON.stringify(said));
   });
+  await test('launcher: a launcher the reader hid stays hidden after a reload, and the tool still starts', async () => {
+    const { root } = await boot(memoryBackend(SEED), {}, undefined, { hideLauncher: true });
+    assert(root.querySelector('.dock').classList.contains('is-hidden'), 'the launcher is hidden');
+    assert(root.querySelector('button.pin'), 'and the tool started: the pin is drawn');
+  });
   /* ---------- 3. Esc ladder ---------- */
   await test('esc: one level at a time: menu, draft, thread, placing', async () => {
     const be = memoryBackend(SEED);

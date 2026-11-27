@@ -62,7 +62,8 @@
         } catch (_) { /* not a person: left out */ }
       });
       if (mine && began < wroteAt && named[mine]) seen[mine] = named[mine];
-      named = seen; spare = extra; known = true;
+      named = seen; known = true;
+      spare = extra.filter(function (id) { return !(mine && seen[mine] && seen[mine].id === id); });   // never the one that names them
     }
     function person(o) {
       var p = { authorId: o.owner, authorName: o.data.authorName }, n = pending !== null && o.owner === mine ? pending : named[o.owner] && named[o.owner].name;
@@ -158,7 +159,7 @@
             wroteAt = Date.now();
             named[mine] = { id: had ? had.id : o && o.id, name: n, at: had ? had.at : Number(o && o.created) || wroteAt };
             if (pending === n) pending = null;
-            var extra = spare; spare = [];
+            var keep = named[mine].id, extra = spare.filter(function (id) { return id !== keep; }); spare = [];
             return Promise.all(extra.map(function (id) { return people.remove(id).then(null, function () {}); }));
           }, function (e) { if (pending === n) pending = null; throw e; });
         });

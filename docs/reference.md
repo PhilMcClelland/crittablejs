@@ -16,6 +16,18 @@ The launcher opens the panel; "Add note" there starts placing. `C` opens the pan
 
 Everything can be done from the keyboard. To place a note, press `C`, move focus to the element with Tab, and press Enter. To move a pin, open its note, choose "Move pin" in the note's menu, and choose the new spot the same way (or click it). The single-letter keys can be turned off by the reader, with "Keyboard shortcuts" in the panel's More menu; they are also left alone while focus is in a field, a custom element, or a widget of the page's own that takes keys.
 
+### Your own button
+
+A page can open and shut the panel from a button of its own by sending an event on `window`:
+
+```js
+window.dispatchEvent(new Event('crittable:toggle-panel'));   // opens it when shut, closes it when open
+window.dispatchEvent(new Event('crittable:open-panel'));
+window.dispatchEvent(new Event('crittable:close-panel'));    // also stops placing a note
+```
+
+To hear when it opens or shuts (to keep the button's state), take `panel-opened` and `panel-closed` in `onEvent`. With a button of its own a page will usually want the launcher hidden: set `showLauncher: false`. "Show launcher" in the panel's menu shows or hides the launcher and nothing else: the add key and these events still open the panel. One case would leave a reader no way in, the launcher hidden and the keys turned off on a page with no button of its own, so then the launcher shows anyway. A page counts as having its own button once it sets `showLauncher: false` or sends one of these events.
+
 Each key can be changed: `keys: { add: 'c', next: 'j', previous: 'k', back: 'Escape' }` in `CRITTABLE_CONFIG`. `Shift` with the `add` key is always the one that hides and shows the pins.
 
 ## Options
@@ -33,6 +45,7 @@ Every option is a key of `window.CRITTABLE_CONFIG` (set it before the script tag
 | `keys` | `{ add: 'c', next: 'j', previous: 'k', back: 'Escape' }` | The keys ("Keys"). |
 | `theme` | `'auto'` | `'light'`, `'dark'` or `'auto'` (follow the system). The reader can change it in the panel, and their choice is remembered and wins. |
 | `panelOpen` | `false` | `true` or `'always'` ("Where it starts"). |
+| `showLauncher` | `true` | `false` starts the launcher hidden, for a page with its own button ("Your own button"). The reader can turn it on in the panel, and their choice is remembered and wins. |
 | `storagePrefix` | `'crittable'` | The start of every storage key the tool writes. |
 | `storage` | not set | `'session'` keeps notes and settings for the tab only. |
 | `tagName` | `'pin-note-board'` | The name of the tool's element. The element for a note being written is `<tagName>-editor`, and the flag on `window` is `'__'` and this name. |

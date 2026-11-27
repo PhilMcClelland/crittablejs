@@ -2,6 +2,12 @@
 
 A page runs the version its script tag names (the `@v…` in a hosted address), or the version of the folder that was copied. `data-version` on the tool's element says which.
 
+## 0.3.1
+
+- "Show launcher" shows or hides the launcher and nothing else. Before, hiding it also opened the panel and took away its close button; now the add key, and a button of the page's own, still open the panel. If the launcher is hidden and the keys are turned off on a page with no button of its own, the launcher shows anyway, so nobody is left without a way in.
+- A page can open and shut the panel from its own button: send `crittable:toggle-panel`, `crittable:open-panel` or `crittable:close-panel` on `window` (`docs/reference.md`, "Your own button").
+- `showLauncher: false` starts the launcher hidden, for such a page. A reader can turn it back on in the panel, and their choice wins.
+
 ## 0.3.0
 
 - A name is who someone is now. Change yours and every note and reply you have written shows the new one, for everyone, straight away. On Persistable.js each person's name is one object in a new collection, `crittable-people`, matched to notes by the store's own record of who wrote what, so nobody can rename someone else. A name is saved only for someone who has written a note or reply, so a visitor who only reads leaves no name behind, and a made-up name is never saved. Notes written before keep the name they carry until their writer next loads the page. The Persistable.js Worker and its Supabase SQL do not change; the space just holds one more collection. Faces are coloured and lettered by name, so a rename recolours your earlier faces too. A store adapter of your own keeps the old behaviour until it adds `setName` (`spec/STORAGE.md`).

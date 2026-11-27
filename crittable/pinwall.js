@@ -1,4 +1,4 @@
-/*! Crittable.js 0.3.0 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
+/*! Crittable.js 0.3.1 · MIT · (c) 2026 Phil McClelland · https://github.com/PhilMcClelland/crittablejs */
 // Crittable.js: attach notes to spots on a page.
 (() => {
   'use strict';
@@ -10,7 +10,7 @@
   const keyIs = (evt, name) => String(evt.key).toLowerCase() === String(KEYS[name]).toLowerCase();
   const isBack = evt => keyIs(evt, 'back');
   const keyCap = name => /^esc(ape)?$/i.test(KEYS[name]) ? 'Esc' : String(KEYS[name]).toUpperCase();
-  const VERSION = '0.3.0';   // also in the first line of this file and in CHANGELOG.md
+  const VERSION = '0.3.1';   // also in the first line of this file and in CHANGELOG.md
   const GUARD = '__' + OPTS.tagName;
   /* the product name, with a file extension (".js") split off so the lockup can set it quietly */
   const NAME = /^(.+?)(\.[a-z]{1,4})?$/i.exec(String(OPTS.productName)) || [0, String(OPTS.productName), ''];
@@ -1933,7 +1933,7 @@ aside.fail .listing{display:none}
       else if (W.placing) setAiming(false);
       /* the panel is the last level, and only when the key is ours to take: focus is in the tool or on nothing. With focus on
          one of the host page's own controls the key belongs to the page (its dialog, its menu). */
-      else if (W.sideOpen && !W.hideLauncher && (ROOT.activeElement || !document.activeElement || document.activeElement === document.body || document.activeElement === document.documentElement)) {
+      else if (W.sideOpen && (ROOT.activeElement || !document.activeElement || document.activeElement === document.body || document.activeElement === document.documentElement)) {
         halt(evt); toggleSide(false); if (ROOT.activeElement) pinTool.focus({ preventScroll: true });
       }
       return;
@@ -1969,7 +1969,7 @@ aside.fail .listing{display:none}
       if (!READ_ONLY && !W.sideOpen && !sheetMode()) toggleSide(true);
       setAiming(true);
     }
-    else { setAiming(false); if (W.sideOpen && !W.hideLauncher) toggleSide(false); }   // the same key again is the way back out: placing stops and the panel shuts
+    else { setAiming(false); if (W.sideOpen) toggleSide(false); }   // the same key again is the way back out: placing stops and the panel shuts
   }, true);
 
   const setShowPins = on => {
@@ -2045,7 +2045,7 @@ aside.fail .listing{display:none}
   };
 
   /* ---------- sidebar ---------- */
-  W.hideLauncher = shelf.read('hideLauncher', false);
+  W.hideLauncher = shelf.read('hideLauncher', OPTS.showLauncher === false);   // the page's starting value; the reader's own choice, once made, wins
   /* MENU.Shortcuts: the keys that are single letters (add, next, previous) can be turned off by the reader; Escape, Enter and Tab stay */
   W.hotkeys = shelf.read('hotkeys', true) !== false;
   const q = build('input', { type: 'search', 'aria-label': 'Search notes', placeholder: 'Search notes', on: { input() {
@@ -2093,7 +2093,7 @@ aside.fail .listing{display:none}
     ...(CAN_SHARE ? [shareItem(), build('hr')] : []),
     check('Show pins', W.showPins, on => setShowPins(on), { 'data-pins': '1' }, 'Shift+' + keyCap('add')),
     check('Show launcher', !W.hideLauncher, on => setHideLauncher(!on), { 'data-launcher': '1' }),
-    check('Keyboard shortcuts', W.hotkeys, on => { W.hotkeys = on; shelf.write('hotkeys', on); announce(on ? 'Keyboard shortcuts on' : 'Keyboard shortcuts off'); }, { 'data-hotkeys': '1' }),
+    check('Keyboard shortcuts', W.hotkeys, on => { W.hotkeys = on; shelf.write('hotkeys', on); seatLauncher(); announce(on ? 'Keyboard shortcuts on' : 'Keyboard shortcuts off'); }, { 'data-hotkeys': '1' }),
     build('button', { type: 'button', role: 'menuitem', text: 'Move list to other side', on: { click: () => {
       flipMenu(moreMenu, false); W.side = W.side === 'right' ? 'left' : 'right'; shelf.write('side', W.side); seatSide(); } } }),
     build('hr'), themeTool);
@@ -2181,14 +2181,28 @@ aside.fail .listing{display:none}
       build('div', { class: 'listing' }, noneNote, nowBox, awayBox)), youBox, readBox);
   { const sc = panel.querySelector('.scroll'); sc.addEventListener('scroll', () => panel.classList.toggle('scrolled', sc.scrollTop > 0), { passive: true }); }
   ROOT.append(panel);
-  const setHideLauncher = off => {
-    W.hideLauncher = off; shelf.write('hideLauncher', off);
+  /* "Show launcher" shows or hides the launcher and nothing else: the add key and the page's own button (the crittable:
+     *-panel events below) still open the panel. One case would leave no way in at all: the launcher hidden and the keys turned
+     off, on a page that has no button of its own. Then the launcher shows anyway. A page says it has its own way in by
+     starting the launcher hidden (showLauncher: false) or by sending one of the events. */
+  let pageOwnsWayIn = OPTS.showLauncher === false;
+  const seatLauncher = () => {
+    const off = W.hideLauncher && (W.hotkeys || pageOwnsWayIn);
     tray.classList.toggle('is-hidden', off);
     if (!off) seatTray(false);   // it has no size while hidden
-    const box = ROOT.querySelector('input[data-launcher]'); if (box) box.checked = !off;
-    sideClose.style.display = off ? 'none' : ''; /* keep the sidebar open so the launcher can be restored */
-    if (off && !W.sideOpen) toggleSide(true);
   };
+  const setHideLauncher = off => {
+    W.hideLauncher = off; shelf.write('hideLauncher', off);
+    const box = ROOT.querySelector('input[data-launcher]'); if (box) box.checked = !off;
+    seatLauncher();
+  };
+  /* the page's own button for the panel (the list of notes): crittable:open-panel, crittable:close-panel, and
+     crittable:toggle-panel, which opens it when shut and closes it when open. Closing also stops placing, as the add key does. */
+  const shutPanel = () => { if (W.placing) setAiming(false); if (W.sideOpen) toggleSide(false); };
+  const fromPage = fn => () => { pageOwnsWayIn = true; seatLauncher(); try { fn(); } catch (_) { /* the panel stays as it was */ } };
+  addEventListener('crittable:open-panel', fromPage(() => { if (!W.sideOpen) toggleSide(true); }));
+  addEventListener('crittable:close-panel', fromPage(shutPanel));
+  addEventListener('crittable:toggle-panel', fromPage(() => { if (W.sideOpen) shutPanel(); else toggleSide(true); }));
   let hostPad = null;
   const seatSide = glide => {
     panel.classList.toggle('left', W.side === 'left'); panel.classList.toggle('right', W.side !== 'left');
@@ -2474,8 +2488,8 @@ aside.fail .listing{display:none}
     if (!SHARED) stampMine();
     refreshPins(); scheduleList();
   };
-  /* a launcher the reader hid last time stays hidden; the panel it opens needs the list, so this waits until the list is set up */
-  if (W.hideLauncher) setHideLauncher(true);
+  /* a launcher the reader (or the page) hid stays hidden; set after the list, as everything that may open the panel is */
+  seatLauncher();
   (async () => {
     if (!shelf.live && !OPTS.backend) warn('Browser storage is unavailable. Notes will be lost on reload.');
     if (shelf.read('placing', false)) setAiming(true);

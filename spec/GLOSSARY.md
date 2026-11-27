@@ -532,7 +532,6 @@ Found by an independent review on 2026-11-17, not yet settled:
 - Touch targets: the row's two toggles stay at 26px for a coarse pointer; icon buttons, Send and Resolve grow to 40px.
 
 Settled from that review (2026-11-17): a row tap on a phone closes the panel; a failure in an open card is said in the card; spare anchors are never positional; menus close on a choice (changed 2026-11-23: a setting keeps the menu open, only an action closes it; see DECISIONS), return focus to their button, move with the arrow keys without choosing, and only one is open at a time; Escape backs out one level (closing a note no longer also leaves placing mode) and closes the panel when focus is in it; a blank send says "A note cannot be empty."; the filter button's label says when it is changed; a muted row keeps its reason line at full strength; the reply row is hidden while a note is edited, so the card has one filled button; Tab stays inside the missing-pin dialog.
-- With the launcher hidden and the panel shut, only the comment key is left, and it starts a note; nothing reopens the panel. Hiding the launcher should never strand the reader.
 
 ## 14. Open questions
 

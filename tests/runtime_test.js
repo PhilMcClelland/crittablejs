@@ -138,7 +138,8 @@ Object.assign(globalThis, { window: globalThis, document, Element, NodeFilter: {
 const frames = [];
 globalThis.requestAnimationFrame = fn => frames.push(fn);
 const flushFrames = () => frames.splice(0).forEach(f => f());
-globalThis.addEventListener = () => {};
+const winHeard = []; globalThis.addEventListener = (type, fn) => { winHeard.push({ type, fn }); };
+const fireWin = type => winHeard.filter(l => l.type === type).forEach(l => l.fn({ type }));
 try { Object.defineProperty(globalThis, 'sessionStorage', { value: { getItem: () => null, removeItem() {}, setItem() {} }, configurable: true }); } catch (_) { /* keep default */ }
 require(path.join(DEMO, 'store.js'));
 const SRC = fs.readFileSync(path.join(DEMO, 'pinwall.js'), 'utf8');
@@ -153,7 +154,7 @@ async function boot(backend, opts, user = { id: 'me', name: 'Tester' }, kept = {
   const target = document.createElement('div'); target.id = 'target'; target.append('Hello there');
   document.body.children.splice(0).forEach(c => { c.parentNode = null; });
   document.body.append(target);
-  delete globalThis['__pin-note-board'];
+  delete globalThis['__pin-note-board']; winHeard.length = 0;
   Object.keys(mem).forEach(k => delete mem[k]);
   for (const k in kept) mem['crittable.' + k] = JSON.stringify(kept[k]);   // what this browser kept from an earlier visit
   document.activeElement = document.body;
@@ -376,6 +377,33 @@ const test = async (name, fn) => { await fn(); results.push(name); };
     const { root } = await boot(memoryBackend(SEED), {}, undefined, { hideLauncher: true });
     assert(root.querySelector('.dock').classList.contains('is-hidden'), 'the launcher is hidden');
     assert(root.querySelector('button.pin'), 'and the tool started: the pin is drawn');
+  });
+  const shut = root => root.querySelector('aside').classList.contains('shut');
+  const trayHidden = root => root.querySelector('.dock').classList.contains('is-hidden');
+  await test('launcher: hiding it hides only the launcher; the panel is not forced open', async () => {
+    const { root } = await boot(memoryBackend(SEED), {}, undefined, { hideLauncher: true });
+    assert(trayHidden(root), 'hidden'); assert(shut(root), 'and the panel stays shut');
+    assert(byLabel(root, 'Close list'), 'the panel keeps its close button');
+  });
+  await test('launcher: a page can start it hidden, and the reader\'s own choice wins', async () => {
+    let { root } = await boot(memoryBackend(SEED), { showLauncher: false });
+    assert(trayHidden(root) && shut(root), 'the page starts it hidden, panel shut');
+    ({ root } = await boot(memoryBackend(SEED), { showLauncher: false }, undefined, { hideLauncher: false }));
+    assert(!trayHidden(root), 'a reader who turned it back on keeps it');
+  });
+  await test('launcher: hidden with the keys off and no button of the page\'s own, it shows anyway', async () => {
+    const { root } = await boot(memoryBackend(SEED), {}, undefined, { hideLauncher: true, hotkeys: false });
+    assert(!trayHidden(root), 'shown: otherwise nothing would open the panel');
+    fireWin('crittable:open-panel'); await settle();
+    assert(trayHidden(root), 'once the page shows it has a button, the reader\'s choice holds');
+  });
+  await test('panel events: open, close and toggle the panel from the page', async () => {
+    const { root } = await boot(memoryBackend(SEED), { showLauncher: false });
+    fireWin('crittable:open-panel'); await settle(); assert(!shut(root), 'open-panel opens it');
+    fireWin('crittable:open-panel'); await settle(); assert(!shut(root), 'and again leaves it open');
+    fireWin('crittable:close-panel'); await settle(); assert(shut(root), 'close-panel closes it');
+    fireWin('crittable:toggle-panel'); await settle(); assert(!shut(root), 'toggle-panel opens a shut panel');
+    fireWin('crittable:toggle-panel'); await settle(); assert(shut(root), 'and closes an open one');
   });
   /* ---------- 3. Esc ladder ---------- */
   await test('esc: one level at a time: menu, draft, thread, placing', async () => {
